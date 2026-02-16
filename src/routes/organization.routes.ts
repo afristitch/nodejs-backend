@@ -1,0 +1,39 @@
+import express from 'express';
+import { body } from 'express-validator';
+import * as organizationController from '../controllers/organization.controller';
+import authMiddleware from '../middlewares/auth.middleware';
+import { organizationMiddleware } from '../middlewares/organization.middleware';
+import { requireAdmin } from '../middlewares/role.middleware';
+import validate from '../middlewares/validate.middleware';
+
+const router = express.Router();
+
+// Apply auth and organization middleware to all routes
+router.use(authMiddleware);
+router.use(organizationMiddleware);
+
+/**
+ * @route   GET /api/v1/organization
+ * @desc    Get organization details
+ * @access  Private
+ */
+router.get('/', organizationController.getOrganization);
+
+/**
+ * @route   PUT /api/v1/organization
+ * @desc    Update organization (ADMIN only)
+ * @access  Private (ORG_ADMIN)
+ */
+router.put(
+    '/',
+    requireAdmin,
+    [
+        body('name').optional().trim().notEmpty().withMessage('Name cannot be empty'),
+        body('email').optional().isEmail().withMessage('Valid email is required'),
+        body('phone').optional().trim().notEmpty().withMessage('Phone cannot be empty'),
+        validate,
+    ],
+    organizationController.updateOrganization
+);
+
+export default router;
