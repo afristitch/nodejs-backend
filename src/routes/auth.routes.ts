@@ -2,6 +2,7 @@ import express from 'express';
 import { body } from 'express-validator';
 import * as authController from '../controllers/auth.controller';
 import validate from '../middlewares/validate.middleware';
+import protect from '../middlewares/auth.middleware';
 
 const router = express.Router();
 
@@ -90,6 +91,36 @@ router.post(
         validate,
     ],
     authController.refreshToken
+);
+
+/**
+ * @route   POST /api/v1/auth/resend-verification
+ * @desc    Resend verification email
+ * @access  Public
+ */
+router.post(
+    '/resend-verification',
+    [
+        body('email').isEmail().withMessage('Valid email is required'),
+        validate,
+    ],
+    authController.resendVerification
+);
+
+/**
+ * @route   PUT /api/v1/auth/update-password
+ * @desc    Update password
+ * @access  Private
+ */
+router.put(
+    '/update-password',
+    protect,
+    [
+        body('currentPassword').notEmpty().withMessage('Current password is required'),
+        body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters'),
+        validate,
+    ],
+    authController.updatePassword
 );
 
 export default router;

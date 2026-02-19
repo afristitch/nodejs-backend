@@ -44,6 +44,10 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
             errorResponse(res, 'Invalid email or password', 401);
             return;
         }
+        if (error.message === 'Email not verified') {
+            errorResponse(res, 'Email not verified. A new verification link has been sent to your email.', 401);
+            return;
+        }
         next(error);
     }
 };
@@ -126,5 +130,50 @@ export const refreshToken = async (req: Request, res: Response, _next: NextFunct
         successResponse(res, result, 'Token refreshed successfully');
     } catch (error) {
         errorResponse(res, 'Invalid or expired refresh token', 401);
+    }
+};
+
+/**
+ * Resend verification email
+ * POST /api/v1/auth/resend-verification
+ */
+export const resendVerification = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { email } = req.body;
+
+        await authService.resendVerification(email);
+
+        successResponse(
+            res,
+            null,
+            'If an account exists with that email and is not verified, a new verification link has been sent.'
+        );
+    } catch (error: any) {
+        if (error.message === 'Email already verified') {
+            errorResponse(res, error.message, 400);
+            return;
+        }
+        next(error);
+    }
+};
+
+/**
+ * Update password (Authenticated)
+ * PUT /api/v1/auth/update-password
+ */
+export const updatePassword = async (req: any, res: Response, next: NextFunction) => {
+    try {
+        const userId = req.user?._id as string;
+        const { currentPassword, newPassword } = req.body;
+
+        await authService.updatePassword(userId, currentPassword, newPassword);
+
+        successResponse(res, null, 'Password updated successfully');
+    } catch (error: any) {
+        if (error.message === 'Invalid current password') {
+            errorResponse(res, error.message, 400);
+            return;
+        }
+        next(error);
     }
 };

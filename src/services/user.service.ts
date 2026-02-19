@@ -1,5 +1,6 @@
 import User from '../models/User';
 import { IUser, PaginationOptions } from '../types';
+import { sendCredentialsEmail } from '../utils/email';
 
 /**
  * User Service
@@ -24,6 +25,11 @@ export const createUser = async (organizationId: string, userData: any): Promise
     });
 
     await user.save();
+
+    // Send credentials email to the new user
+    // We pass the raw password from userData before it was hashed in the model pre-save hook
+    await sendCredentialsEmail(user.email, user.name, userData.password);
+
     return user;
 };
 

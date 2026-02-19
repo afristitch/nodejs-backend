@@ -138,6 +138,8 @@ export interface IOrder {
     dueDate?: Date;
     deliveryDate?: Date;
     notes?: string;
+    clothImageUrl?: string;
+    clothSize?: string;
     organizationId: string; // UUID
     createdBy: string; // UUID
     createdAt: Date;

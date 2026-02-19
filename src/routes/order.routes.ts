@@ -26,6 +26,15 @@ router.post(
             .optional()
             .isIn(['pending', 'in-progress', 'fitting', 'completed', 'delivered'])
             .withMessage('Invalid status'),
+        body('clothImageUrl')
+            .optional()
+            .isURL()
+            .withMessage('Cloth image URL must be a valid URL'),
+        body('clothSize')
+            .optional()
+            .isString()
+            .isLength({ max: 100 })
+            .withMessage('Cloth size must be a string of at most 100 characters'),
         validate,
     ],
     orderController.createOrder
@@ -65,6 +74,15 @@ router.put(
             .optional()
             .isIn(['pending', 'in-progress', 'fitting', 'completed', 'delivered'])
             .withMessage('Invalid status'),
+        body('clothImageUrl')
+            .optional()
+            .isURL()
+            .withMessage('Cloth image URL must be a valid URL'),
+        body('clothSize')
+            .optional()
+            .isString()
+            .isLength({ max: 100 })
+            .withMessage('Cloth size must be a string of at most 100 characters'),
         validate,
     ],
     orderController.updateOrder

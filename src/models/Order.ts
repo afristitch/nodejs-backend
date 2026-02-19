@@ -60,6 +60,15 @@ const orderSchema = new Schema<IOrder>(
             maxlength: [2000, 'Notes cannot exceed 2000 characters'],
             default: null,
         },
+        clothImageUrl: {
+            type: String,
+            default: null,
+        },
+        clothSize: {
+            type: String,
+            trim: true,
+            default: null,
+        },
         organizationId: {
             type: String,
             required: [true, 'Organization is required'],
@@ -87,10 +96,10 @@ orderSchema.virtual('balance').get(function (this: IOrder) {
 });
 
 orderSchema.virtual('client', {
-  ref: 'Client',      // refers to Client model
-  localField: 'clientId', // stored in DB
-  foreignField: '_id',    // Client._id
-  justOne: true,           // single object, not array
+    ref: 'Client',      // refers to Client model
+    localField: 'clientId', // stored in DB
+    foreignField: '_id',    // Client._id
+    justOne: true,           // single object, not array
 });
 
 // Ensure virtuals are included in JSON responses

@@ -6,6 +6,7 @@ import measurementRoutes from './measurement.routes';
 import orderRoutes from './order.routes';
 import organizationRoutes from './organization.routes';
 import profileRoutes from './profile.routes';
+import uploadRoutes from './upload.routes';
 
 const router = express.Router();
 
@@ -30,5 +31,6 @@ router.use('/measurements', measurementRoutes);
 router.use('/orders', orderRoutes);
 router.use('/organization', organizationRoutes);
 router.use('/profile', profileRoutes);
+router.use('/upload', uploadRoutes);
 
 export default router;

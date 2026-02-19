@@ -81,6 +81,15 @@ export const login = async (email: string, password: string): Promise<AuthRespon
         throw new Error('Invalid credentials');
     }
 
+    // Check if email is verified
+    if (!user.isEmailVerified) {
+        // Automatically resend verification email
+        const emailToken = generateEmailToken({ userId: user._id });
+        await sendVerificationEmail(user.email, user.name, emailToken);
+
+        throw new Error('Email not verified');
+    }
+
     // Generate tokens
     const accessToken = generateAccessToken({ userId: user._id });
     const refreshToken = generateRefreshToken({ userId: user._id });
@@ -200,6 +209,63 @@ export const refreshAccessToken = async (refreshToken: string): Promise<{ access
     }
 };
 
+/**
+ * Resend email verification link
+ * @param {String} email - User email
+ * @returns {Promise<boolean>} Success (returns true even if user not found for security)
+ */
+export const resendVerification = async (email: string): Promise<boolean> => {
+    const user = await User.findOne({ email });
+
+    if (!user) {
+        return true;
+    }
+
+    if (user.isEmailVerified) {
+        throw new Error('Email already verified');
+    }
+
+    // Generate email verification token
+    const emailToken = generateEmailToken({ userId: user._id });
+
+    // Send verification email
+    await sendVerificationEmail(user.email, user.name, emailToken);
+
+    return true;
+};
+
+/**
+ * Update user password
+ * @param {String} userId - User ID
+ * @param {String} currentPassword - Current password
+ * @param {String} newPassword - New password
+ * @returns {Promise<IUser>} Updated user
+ */
+export const updatePassword = async (
+    userId: string,
+    currentPassword: string,
+    newPassword: string
+): Promise<IUser> => {
+    // Find user with password
+    const user = await User.findById(userId).select('+password');
+
+    if (!user) {
+        throw new Error('User not found');
+    }
+
+    // Check current password
+    const isMatch = await user.comparePassword(currentPassword);
+    if (!isMatch) {
+        throw new Error('Invalid current password');
+    }
+
+    // Update password
+    user.password = newPassword;
+    await user.save();
+
+    return user;
+};
+
 const authService = {
     registerOrganization,
     login,
@@ -207,6 +273,8 @@ const authService = {
     requestPasswordReset,
     resetPassword,
     refreshAccessToken,
+    resendVerification,
+    updatePassword,
 };
 
 export default authService;

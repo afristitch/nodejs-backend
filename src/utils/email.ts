@@ -1,20 +1,12 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
 /**
  * Email Utility
- * Handles sending verification and password reset emails
+ * Handles sending verification and password reset emails via Resend
  */
 
-// Create transporter
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: parseInt(process.env.EMAIL_PORT || '587'),
-  secure: process.env.EMAIL_SECURE === 'true',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_key');
+const fromEmail = process.env.FROM_EMAIL || 'Tailor App <no-reply@example.com>';
 
 /**
  * Send email verification link
@@ -26,13 +18,25 @@ export const sendVerificationEmail = async (
 ): Promise<void> => {
   const url = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
 
-  const mailOptions = {
-    from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_FROM_ADDRESS}>`,
-    to: email,
-    subject: 'Verify your email - Tailor API',
-    html: `
+  try {
+    if (process.env.NODE_ENV === 'test') return;
+
+    // In local development, if no API key, just log it
+    if (!process.env.RESEND_API_KEY && process.env.NODE_ENV === 'development') {
+      console.log('--- Verification Email Simulation ---');
+      console.log(`To: ${email}`);
+      console.log(`URL: ${url}`);
+      console.log('------------------------------------');
+      return;
+    }
+
+    await resend.emails.send({
+      from: fromEmail,
+      to: email,
+      subject: 'Verify your email - AfriStitch',
+      html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 10px;">
-                <h2 style="color: #333;">Welcome to Tailor API, ${name}!</h2>
+                <h2 style="color: #333;">Welcome to AfriStitch, ${name}!</h2>
                 <p>Thank you for registering. Please click the button below to verify your email address:</p>
                 <div style="text-align: center; margin: 30px 0;">
                     <a href="${url}" style="background-color: #4CAF50; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Verify Email</a>
@@ -44,21 +48,7 @@ export const sendVerificationEmail = async (
                 <p style="font-size: 12px; color: #888;">If you did not create an account, please ignore this email.</p>
             </div>
         `,
-  };
-
-  try {
-    if (process.env.NODE_ENV === 'test') return;
-
-    // In local development, if no email credentials, just log it
-    if (!process.env.EMAIL_USER && process.env.NODE_ENV === 'development') {
-      console.log('--- Verification Email Simulation ---');
-      console.log(`To: ${email}`);
-      console.log(`URL: ${url}`);
-      console.log('------------------------------------');
-      return;
-    }
-
-    await transporter.sendMail(mailOptions);
+    });
   } catch (error) {
     console.error('Error sending verification email:', error);
     // Don't throw to prevent blocking the registration flow
@@ -75,11 +65,23 @@ export const sendPasswordResetEmail = async (
 ): Promise<void> => {
   const url = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
-  const mailOptions = {
-    from: `"${process.env.EMAIL_FROM_NAME}" <${process.env.EMAIL_FROM_ADDRESS}>`,
-    to: email,
-    subject: 'Reset your password - Tailor API',
-    html: `
+  try {
+    if (process.env.NODE_ENV === 'test') return;
+
+    // In local development, if no API key, just log it
+    if (!process.env.RESEND_API_KEY && process.env.NODE_ENV === 'development') {
+      console.log('--- Password Reset Email Simulation ---');
+      console.log(`To: ${email}`);
+      console.log(`URL: ${url}`);
+      console.log('--------------------------------------');
+      return;
+    }
+
+    await resend.emails.send({
+      from: fromEmail,
+      to: email,
+      subject: 'Reset your password - AfriStitch',
+      html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 10px;">
                 <h2 style="color: #333;">Password Reset Request</h2>
                 <p>Hello ${name},</p>
@@ -94,22 +96,62 @@ export const sendPasswordResetEmail = async (
                 <p style="font-size: 12px; color: #888;">If you did not request a password reset, please ignore this email.</p>
             </div>
         `,
-  };
-
-  try {
-    if (process.env.NODE_ENV === 'test') return;
-
-    // In local development, if no email credentials, just log it
-    if (!process.env.EMAIL_USER && process.env.NODE_ENV === 'development') {
-      console.log('--- Password Reset Email Simulation ---');
-      console.log(`To: ${email}`);
-      console.log(`URL: ${url}`);
-      console.log('--------------------------------------');
-      return;
-    }
-
-    await transporter.sendMail(mailOptions);
+    });
   } catch (error) {
     console.error('Error sending password reset email:', error);
   }
 };
+
+/**
+ * Send credentials to a newly created user
+ */
+export const sendCredentialsEmail = async (
+  email: string,
+  name: string,
+  password: string
+): Promise<void> => {
+  const loginUrl = `${process.env.FRONTEND_URL}/login`;
+
+  try {
+    if (process.env.NODE_ENV === 'test') return;
+
+    // In local development, if no API key, just log it
+    if (!process.env.RESEND_API_KEY && process.env.NODE_ENV === 'development') {
+      console.log('--- Credentials Email Simulation ---');
+      console.log(`To: ${email}`);
+      console.log(`Name: ${name}`);
+      console.log(`Email: ${email}`);
+      console.log(`Password: ${password}`);
+      console.log(`Login URL: ${loginUrl}`);
+      console.log('------------------------------------');
+      return;
+    }
+
+    await resend.emails.send({
+      from: fromEmail,
+      to: email,
+      subject: 'Welcome to AfriStitch - Your Account Credentials',
+      html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 10px;">
+                <h2 style="color: #333;">Welcome to AfriStitch, ${name}!</h2>
+                <p>Your account has been created by your organization admin. Here are your login credentials:</p>
+                <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                    <p style="margin: 5px 0;"><strong>Email:</strong> ${email}</p>
+                    <p style="margin: 5px 0;"><strong>Password:</strong> ${password}</p>
+                </div>
+                <p>Please log in and change your password as soon as possible for security.</p>
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="${loginUrl}" style="background-color: #2196F3; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Login Now</a>
+                </div>
+                <p>Alternatively, you can copy and paste this link into your browser:</p>
+                <p style="word-break: break-all; color: #666;">${loginUrl}</p>
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+                <p style="font-size: 12px; color: #888;">If you have any questions, please contact your administrator.</p>
+            </div>
+        `,
+    });
+  } catch (error) {
+    console.error('Error sending credentials email:', error);
+  }
+};
+
