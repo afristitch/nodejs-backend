@@ -42,9 +42,10 @@ const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunctio
 
         next();
     } catch (error: any) {
-        return res.status(403).json({
+        const isExpired = error.name === 'TokenExpiredError' || error.message?.includes('jwt expired');
+        return res.status(isExpired ? 401 : 403).json({
             success: false,
-            message: error.message || 'Invalid or expired token',
+            message: isExpired ? 'Token has expired' : (error.message || 'Invalid token'),
         });
     }
 };

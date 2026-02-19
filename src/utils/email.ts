@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { renderTemplate } from './template-renderer';
 
 /**
  * Email Utility
@@ -32,24 +33,16 @@ export const sendVerificationEmail = async (
       return;
     }
 
+    const html = renderTemplate('verification', {
+      name,
+      url,
+    });
+
     await resend.emails.send({
       from: fromEmail,
       to: email,
       subject: 'Verify your email - SewDigital',
-      html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 10px;">
-                <h2 style="color: #333;">Welcome to SewDigital, ${name}!</h2>
-                <p>Thank you for registering. Please click the button below to verify your email address:</p>
-                <div style="text-align: center; margin: 30px 0;">
-                    <a href="${url}" style="background-color: #4CAF50; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Verify Email</a>
-                </div>
-                <p>Alternatively, you can copy and paste this link into your browser:</p>
-                <p style="word-break: break-all; color: #666;">${url}</p>
-                <p>This verification link will expire in 1 hour.</p>
-                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-                <p style="font-size: 12px; color: #888;">If you did not create an account, please ignore this email.</p>
-            </div>
-        `,
+      html,
     });
     console.log(`[Email] Verification email sent successfully to ${email}`);
   } catch (error) {
@@ -82,25 +75,16 @@ export const sendPasswordResetEmail = async (
       return;
     }
 
+    const html = renderTemplate('password-reset', {
+      name,
+      url,
+    });
+
     await resend.emails.send({
       from: fromEmail,
       to: email,
       subject: 'Reset your password - SewDigital',
-      html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 10px;">
-                <h2 style="color: #333;">Password Reset Request</h2>
-                <p>Hello ${name},</p>
-                <p>We received a request to reset your password. Please click the button below to set a new password:</p>
-                <div style="text-align: center; margin: 30px 0;">
-                    <a href="${url}" style="background-color: #f44336; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Reset Password</a>
-                </div>
-                <p>Alternatively, you can copy and paste this link into your browser:</p>
-                <p style="word-break: break-all; color: #666;">${url}</p>
-                <p>This reset link will expire in 1 hour.</p>
-                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-                <p style="font-size: 12px; color: #888;">If you did not request a password reset, please ignore this email.</p>
-            </div>
-        `,
+      html,
     });
     console.log(`[Email] Password reset email sent successfully to ${email}`);
   } catch (error) {
@@ -135,28 +119,18 @@ export const sendCredentialsEmail = async (
       return;
     }
 
+    const html = renderTemplate('credentials', {
+      name,
+      email,
+      password,
+      loginUrl,
+    });
+
     await resend.emails.send({
       from: fromEmail,
       to: email,
       subject: 'Welcome to SewDigital - Your Account Credentials',
-      html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 10px;">
-                <h2 style="color: #333;">Welcome to SewDigital, ${name}!</h2>
-                <p>Your account has been created by your organization admin. Here are your login credentials:</p>
-                <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                    <p style="margin: 5px 0;"><strong>Email:</strong> ${email}</p>
-                    <p style="margin: 5px 0;"><strong>Password:</strong> ${password}</p>
-                </div>
-                <p>Please log in and change your password as soon as possible for security.</p>
-                <div style="text-align: center; margin: 30px 0;">
-                    <a href="${loginUrl}" style="background-color: #2196F3; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Login Now</a>
-                </div>
-                <p>Alternatively, you can copy and paste this link into your browser:</p>
-                <p style="word-break: break-all; color: #666;">${loginUrl}</p>
-                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-                <p style="font-size: 12px; color: #888;">If you have any questions, please contact your administrator.</p>
-            </div>
-        `,
+      html,
     });
     console.log(`[Email] Credentials email sent successfully to ${email}`);
   } catch (error) {
