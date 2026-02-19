@@ -21,6 +21,8 @@ export const sendVerificationEmail = async (
   try {
     if (process.env.NODE_ENV === 'test') return;
 
+    console.log(`[Email] Sending verification email to ${email}...`);
+
     // In local development, if no API key, just log it
     if (!process.env.RESEND_API_KEY && process.env.NODE_ENV === 'development') {
       console.log('--- Verification Email Simulation ---');
@@ -49,8 +51,9 @@ export const sendVerificationEmail = async (
             </div>
         `,
     });
+    console.log(`[Email] Verification email sent successfully to ${email}`);
   } catch (error) {
-    console.error('Error sending verification email:', error);
+    console.error(`[Email] Error sending verification email to ${email}:`, error);
     // Don't throw to prevent blocking the registration flow
   }
 };
@@ -67,6 +70,8 @@ export const sendPasswordResetEmail = async (
 
   try {
     if (process.env.NODE_ENV === 'test') return;
+
+    console.log(`[Email] Sending password reset email to ${email}...`);
 
     // In local development, if no API key, just log it
     if (!process.env.RESEND_API_KEY && process.env.NODE_ENV === 'development') {
@@ -97,8 +102,9 @@ export const sendPasswordResetEmail = async (
             </div>
         `,
     });
+    console.log(`[Email] Password reset email sent successfully to ${email}`);
   } catch (error) {
-    console.error('Error sending password reset email:', error);
+    console.error(`[Email] Error sending password reset email to ${email}:`, error);
   }
 };
 
@@ -114,6 +120,8 @@ export const sendCredentialsEmail = async (
 
   try {
     if (process.env.NODE_ENV === 'test') return;
+
+    console.log(`[Email] Sending credentials email to ${email}...`);
 
     // In local development, if no API key, just log it
     if (!process.env.RESEND_API_KEY && process.env.NODE_ENV === 'development') {
@@ -150,8 +158,9 @@ export const sendCredentialsEmail = async (
             </div>
         `,
     });
+    console.log(`[Email] Credentials email sent successfully to ${email}`);
   } catch (error) {
-    console.error('Error sending credentials email:', error);
+    console.error(`[Email] Error sending credentials email to ${email}:`, error);
   }
 };
 
