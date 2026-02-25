@@ -12,12 +12,15 @@ const router = express.Router();
 router.use(authMiddleware);
 router.use(organizationMiddleware);
 
+router.get('/', organizationController.getOrganization);
+
 /**
- * @route   GET /api/v1/organization
- * @desc    Get organization details
+ * @route   GET /api/v1/organization/subscription
+ * @desc    Get organization subscription status
  * @access  Private
  */
-router.get('/', organizationController.getOrganization);
+router.get('/subscription', organizationController.getSubscriptionStatus);
+
 
 /**
  * @route   PUT /api/v1/organization

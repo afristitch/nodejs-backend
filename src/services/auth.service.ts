@@ -30,10 +30,22 @@ export const registerOrganization = async (orgData: any, userData: any): Promise
     });
 
     // Create organization
+    const planService = require('./plan.service').default;
+    const freePlan = await planService.getPlanByName('free');
+
+    const trialEndsAt = new Date();
+    trialEndsAt.setDate(trialEndsAt.getDate() + 7);
+
     const organization = new Organization({
         ...orgData,
         createdBy: user._id,
+        subscriptionStatus: 'trialing',
+        subscriptionPlan: 'free',
+        planId: freePlan?._id || null,
+        trialEndsAt,
     });
+
+
 
     // Update user with organization ID
     user.organizationId = organization._id;

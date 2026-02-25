@@ -14,6 +14,11 @@ const startServer = async () => {
         // Connect to database
         await connectDB();
 
+        // Seed default plans
+        const planService = require('./services/plan.service').default;
+        await planService.seedPlans();
+
+
         // Start listening
         const server = app.listen(PORT, () => {
             console.log(`
