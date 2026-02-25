@@ -9,18 +9,43 @@ import { SubscriptionStatus } from '../types';
  */
 
 /**
+ * Calculate the total price for a subscription with volume discounts
+ * @param basePrice Price per month
+ * @param months Number of months
+ * @returns Total price after discount
+ */
+export const calculateSubscriptionPrice = (basePrice: number, months: number): number => {
+    let discount = 0;
+
+    if (months >= 12) {
+        discount = 0.20; // 20% off for 1 year+
+    } else if (months >= 7) {
+        discount = 0.15; // 15% off for 7-11 months
+    } else if (months >= 4) {
+        discount = 0.10; // 10% off for 4-6 months
+    } else if (months >= 2) {
+        discount = 0.05; // 5% off for 2-3 months
+    }
+
+    const total = basePrice * months;
+    return Number((total * (1 - discount)).toFixed(2));
+};
+
+/**
  * Initialize a subscription
- * @param {string} userId - User ID
+ * @param {string} email - User email
  * @param {string} organizationId - Organization ID
  * @param {string} planId - Target Plan ID
  * @param {string} [callbackUrl] - Optional callback URL
+ * @param {number} [months=1] - Number of months
  * @returns {Promise<any>} Initialization data from gateway
  */
 export const initializeSubscription = async (
     email: string,
     organizationId: string,
     planId: string,
-    callbackUrl?: string
+    callbackUrl?: string,
+    months: number = 1
 ) => {
     // 1. Fetch the plan
     const plan = await Plan.findById(planId);
@@ -28,16 +53,33 @@ export const initializeSubscription = async (
         throw new Error('Plan not found');
     }
 
-    // 2. Determine gateway (defaulting to Paystack for now)
+    // 2. Fetch the organization to check current plan
+    const organization = await Organization.findById(organizationId);
+    if (!organization) {
+        throw new Error('Organization not found');
+    }
+
+    // 3. Calculate price based on months with volume discounts
+    const totalAmount = calculateSubscriptionPrice(plan.price, months);
+
+    // 4. Determine gateway (defaulting to Paystack for now)
     const gateway = process.env.PAYMENT_GATEWAY || 'paystack';
 
     if (gateway === 'paystack') {
+        const metadata = {
+            organizationId,
+            planId,
+            months,
+            newPlanName: plan.name,
+        };
+
         return await paystackService.initializeSubscription(
             email,
             organizationId,
             callbackUrl,
-            plan.price,
-            plan.currency
+            totalAmount,
+            plan.currency,
+            metadata
         );
     }
 

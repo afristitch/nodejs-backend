@@ -12,5 +12,7 @@ const router = express.Router();
 router.use(authenticate);
 
 router.get('/', planController.getPlans);
+router.get('/discounts', planController.getDiscountTiers);
+router.post('/calculate-price', planController.calculatePrice);
 
 export default router;

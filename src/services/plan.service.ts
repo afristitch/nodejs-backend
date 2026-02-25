@@ -55,10 +55,19 @@ export const getPlanByName = async (name: string) => {
     return await Plan.findOne({ name });
 };
 
+/**
+ * Get plan by ID
+ * @param {string} id 
+ */
+export const getPlanById = async (id: string) => {
+    return await Plan.findById(id);
+};
+
 const planService = {
     seedPlans,
     getActivePlans,
     getPlanByName,
+    getPlanById,
 };
 
 export default planService;

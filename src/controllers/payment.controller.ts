@@ -24,7 +24,7 @@ export const initializeSubscription = async (req: AuthRequest, res: Response, ne
             return errorResponse(res, 'Unauthorized', 401);
         }
 
-        const { planId, callbackUrl } = req.body;
+        const { planId, callbackUrl, months = 1 } = req.body;
 
         if (!planId) {
             return errorResponse(res, 'Plan ID is required', 400);
@@ -34,7 +34,8 @@ export const initializeSubscription = async (req: AuthRequest, res: Response, ne
             user.email,
             organizationId,
             planId,
-            callbackUrl
+            callbackUrl,
+            months
         );
 
 
