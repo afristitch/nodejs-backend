@@ -120,9 +120,28 @@ export const getSubscriptionStatus = async (organizationId: string) => {
     };
 };
 
+/**
+ * Check if organization is eligible for SMS features (Premium only)
+ * @param organizationId 
+ * @returns {Promise<boolean>}
+ */
+export const checkSmsEligibility = async (organizationId: string): Promise<boolean> => {
+    const organization = await Organization.findById(organizationId);
+    if (!organization) return false;
+
+    // Must have ACTIVE status and PREMIUM plan
+    // If you have a 'free' plan, you are not eligible
+    return (
+        organization.subscriptionStatus === SubscriptionStatus.ACTIVE &&
+        organization.subscriptionPlan === 'premium'
+    );
+};
+
 const subscriptionService = {
     initializeSubscription,
     getSubscriptionStatus,
+    calculateSubscriptionPrice,
+    checkSmsEligibility,
 };
 
 export default subscriptionService;

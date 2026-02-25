@@ -9,6 +9,7 @@ import profileRoutes from './profile.routes';
 import uploadRoutes from './upload.routes';
 import paymentRoutes from './payment.routes';
 import planRoutes from './plan.routes';
+import smsRoutes from './sms.routes';
 
 
 const router = express.Router();
@@ -38,6 +39,7 @@ router.use('/profile', profileRoutes);
 router.use('/upload', uploadRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/plans', planRoutes);
+router.use('/sms', smsRoutes);
 
 
 export default router;
