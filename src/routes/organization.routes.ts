@@ -5,6 +5,7 @@ import authMiddleware from '../middlewares/auth.middleware';
 import { organizationMiddleware } from '../middlewares/organization.middleware';
 import { requireAdmin } from '../middlewares/role.middleware';
 import validate from '../middlewares/validate.middleware';
+import subscriptionMiddleware from '../middlewares/subscription.middleware';
 
 const router = express.Router();
 
@@ -29,6 +30,7 @@ router.get('/subscription', organizationController.getSubscriptionStatus);
  */
 router.put(
     '/',
+    subscriptionMiddleware,
     requireAdmin,
     [
         body('name').optional().trim().notEmpty().withMessage('Name cannot be empty'),
