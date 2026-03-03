@@ -82,6 +82,7 @@ export interface IOrganization {
     paystackCustomerCode?: string;
     paystackSubscriptionCode?: string;
     paystackPlanCode?: string;
+    revenuecatAppUserId?: string;
     createdAt: Date;
     updatedAt: Date;
 }

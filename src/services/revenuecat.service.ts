@@ -1,0 +1,227 @@
+import Organization from '../models/Organization';
+import Plan from '../models/Plan';
+import SubscriptionPayment from '../models/SubscriptionPayment';
+import { SubscriptionStatus } from '../types';
+
+/**
+ * RevenueCat Service
+ * Handles webhook events from RevenueCat to keep subscription status up to date
+ */
+
+export type RevenueCatEventType =
+    | 'TEST'
+    | 'INITIAL_PURCHASE'
+    | 'RENEWAL'
+    | 'CANCELLATION'
+    | 'UNCANCELLATION'
+    | 'NON_RENEWING_PURCHASE'
+    | 'SUBSCRIPTION_PAUSED'
+    | 'EXPIRATION'
+    | 'BILLING_ISSUE'
+    | 'PRODUCT_CHANGE'
+    | 'SUBSCRIPTION_EXTENDED'
+    | 'TRANSFER';
+
+export interface RevenueCatEvent {
+    type: RevenueCatEventType;
+    id: string;
+    app_user_id: string;
+    original_app_user_id: string;
+    product_id: string;
+    period_type: 'TRIAL' | 'INTRO' | 'NORMAL' | 'PROMOTIONAL' | 'PREPAID';
+    purchased_at_ms: number;
+    expiration_at_ms: number | null;
+    price: number | null;
+    price_in_purchased_currency: number | null;
+    currency: string | null;
+    transaction_id: string;
+    environment: 'SANDBOX' | 'PRODUCTION';
+    store: 'APP_STORE' | 'PLAY_STORE' | 'STRIPE' | 'RC_BILLING' | 'PROMOTIONAL';
+    entitlement_ids: string[] | null;
+    is_trial_conversion?: boolean;
+    cancel_reason?: string;
+    expiration_reason?: string;
+    new_product_id?: string;
+}
+
+export interface RevenueCatWebhookBody {
+    api_version: string;
+    event: RevenueCatEvent;
+}
+
+/**
+ * Main webhook handler — dispatches to event-specific handlers
+ */
+export const handleWebhook = async (body: RevenueCatWebhookBody): Promise<void> => {
+    const { event } = body;
+
+    // Skip sandbox events in production to avoid polluting real data
+    if (process.env.NODE_ENV === 'production' && event.environment === 'SANDBOX') {
+        console.log(`[RevenueCat] Skipping SANDBOX event: ${event.type} (${event.id})`);
+        return;
+    }
+
+    const organizationId = event.original_app_user_id || event.app_user_id;
+    console.log(`[RevenueCat] Processing event: ${event.type} for org: ${organizationId}`);
+
+    switch (event.type) {
+        case 'TEST':
+            console.log('[RevenueCat] Test webhook received OK');
+            break;
+
+        case 'INITIAL_PURCHASE':
+        case 'RENEWAL':
+        case 'UNCANCELLATION':
+        case 'SUBSCRIPTION_EXTENDED':
+        case 'NON_RENEWING_PURCHASE':
+            await handleActivation(organizationId, event);
+            break;
+
+        case 'CANCELLATION':
+            await handleCancellation(organizationId, event);
+            break;
+
+        case 'EXPIRATION':
+            await handleExpiration(organizationId, event);
+            break;
+
+        case 'BILLING_ISSUE':
+            // Don't lock out immediately — let the subscription expire naturally
+            // or let RevenueCat retry billing. Just log.
+            console.warn(`[RevenueCat] Billing issue for org ${organizationId}: ${event.product_id}`);
+            break;
+
+        case 'PRODUCT_CHANGE':
+            // Will apply on next RENEWAL event; just log for now
+            console.log(`[RevenueCat] Product change for org ${organizationId}: ${event.product_id} → ${event.new_product_id}`);
+            break;
+
+        default:
+            console.log(`[RevenueCat] Unhandled event type: ${event.type}`);
+    }
+};
+
+/**
+ * Activate or extend an organization's subscription
+ */
+const handleActivation = async (organizationId: string, event: RevenueCatEvent): Promise<void> => {
+    const organization = await Organization.findById(organizationId);
+    if (!organization) {
+        console.error(`[RevenueCat] Organization not found: ${organizationId}`);
+        return;
+    }
+
+    // Calculate expiration date from the event
+    const subscriptionEndsAt = event.expiration_at_ms
+        ? new Date(event.expiration_at_ms)
+        : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // Default: +30 days if no expiry provided
+
+    // Try to find a matching internal plan by product_id
+    const plan = await Plan.findOne({ isActive: true }).sort({ price: -1 }); // Fallback to highest plan
+
+    const updateData: any = {
+        subscriptionStatus: SubscriptionStatus.ACTIVE,
+        subscriptionEndsAt,
+        revenuecatAppUserId: organizationId,
+    };
+
+    if (plan) {
+        updateData.planId = plan._id;
+        updateData.subscriptionPlan = plan.name;
+    }
+
+    await Organization.findByIdAndUpdate(organizationId, updateData);
+
+    // Audit record
+    await recordPayment({
+        organizationId,
+        planId: plan?._id || organization.planId || 'unknown',
+        amount: event.price_in_purchased_currency ?? event.price ?? 0,
+        currency: event.currency ?? 'USD',
+        months: deriveMonths(event.purchased_at_ms, event.expiration_at_ms),
+        reference: event.transaction_id,
+        eventType: event.type,
+        event,
+    });
+
+    console.log(`[RevenueCat] Subscription activated for org ${organizationId}. Ends: ${subscriptionEndsAt.toISOString()}`);
+};
+
+/**
+ * Mark subscription as cancelled (still active until period end)
+ */
+const handleCancellation = async (organizationId: string, event: RevenueCatEvent): Promise<void> => {
+    const organization = await Organization.findById(organizationId);
+    if (!organization) {
+        console.error(`[RevenueCat] Organization not found: ${organizationId}`);
+        return;
+    }
+
+    // Mark cancelled but keep subscriptionEndsAt so access continues until period end
+    await Organization.findByIdAndUpdate(organizationId, {
+        subscriptionStatus: SubscriptionStatus.CANCELLED,
+    });
+
+    console.log(`[RevenueCat] Subscription cancelled for org ${organizationId}. Reason: ${event.cancel_reason}`);
+};
+
+/**
+ * Mark subscription as expired (no more access)
+ */
+const handleExpiration = async (organizationId: string, event: RevenueCatEvent): Promise<void> => {
+    await Organization.findByIdAndUpdate(organizationId, {
+        subscriptionStatus: SubscriptionStatus.EXPIRED,
+    });
+
+    console.log(`[RevenueCat] Subscription expired for org ${organizationId}. Reason: ${event.expiration_reason}`);
+};
+
+/**
+ * Derive rough month count from timestamps
+ */
+const deriveMonths = (purchasedAtMs: number, expirationAtMs: number | null): number => {
+    if (!expirationAtMs) return 1;
+    const diffMs = expirationAtMs - purchasedAtMs;
+    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+    return Math.max(1, Math.round(diffDays / 30));
+};
+
+/**
+ * Save an audit payment record
+ */
+const recordPayment = async (data: {
+    organizationId: string;
+    planId: string;
+    amount: number;
+    currency: string;
+    months: number;
+    reference: string;
+    eventType: string;
+    event: RevenueCatEvent;
+}): Promise<void> => {
+    try {
+        await SubscriptionPayment.create({
+            organizationId: data.organizationId,
+            planId: data.planId,
+            amount: data.amount,
+            currency: data.currency,
+            months: data.months,
+            status: 'success',
+            reference: `rc_${data.reference}`,
+            gateway: 'revenuecat',
+            metadata: {
+                ...data.event,
+                eventType: data.eventType,
+            },
+        });
+    } catch (auditError: any) {
+        // Don't fail the webhook if only the audit log fails (e.g. duplicate reference on retry)
+        console.error('[RevenueCat] Audit log error:', auditError.message);
+    }
+};
+
+const revenuecatService = {
+    handleWebhook,
+};
+
+export default revenuecatService;

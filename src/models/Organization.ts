@@ -80,6 +80,10 @@ const organizationSchema = new Schema<IOrganization>(
       type: String,
       default: null,
     },
+    revenuecatAppUserId: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,

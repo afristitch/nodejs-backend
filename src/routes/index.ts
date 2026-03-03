@@ -10,6 +10,7 @@ import uploadRoutes from './upload.routes';
 import paymentRoutes from './payment.routes';
 import planRoutes from './plan.routes';
 import smsRoutes from './sms.routes';
+import revenuecatRoutes from './revenuecat.routes';
 
 
 const router = express.Router();
@@ -40,6 +41,7 @@ router.use('/upload', uploadRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/plans', planRoutes);
 router.use('/sms', smsRoutes);
+router.use('/revenuecat', revenuecatRoutes);
 
 
 export default router;
