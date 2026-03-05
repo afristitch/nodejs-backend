@@ -34,7 +34,7 @@ export const registerOrganization = async (orgData: any, userData: any): Promise
     const freePlan = await planService.getPlanByName('free');
 
     const trialEndsAt = new Date();
-    trialEndsAt.setDate(trialEndsAt.getDate() + 7);
+    trialEndsAt.setDate(trialEndsAt.getDate() + 14);
 
     const organization = new Organization({
         ...orgData,
