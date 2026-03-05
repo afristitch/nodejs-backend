@@ -29,6 +29,41 @@ export enum PaymentStatus {
 }
 
 /**
+ * Subscription Plan
+ */
+export enum SubscriptionPlan {
+    FREE = 'free',
+    PREMIUM = 'premium',
+}
+
+/**
+ * Subscription Status
+ */
+export enum SubscriptionStatus {
+    ACTIVE = 'active',
+    CANCELLED = 'cancelled',
+    EXPIRED = 'expired',
+    TRIALING = 'trialing',
+}
+
+/**
+ * Plan Interface
+ */
+export interface IPlan {
+    _id: string; // UUID
+    name: string;
+    description: string;
+    price: number;
+    currency: string;
+    interval: 'monthly' | 'yearly';
+    isActive: boolean;
+
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+
+/**
  * Organization Interface
  */
 export interface IOrganization {
@@ -39,9 +74,20 @@ export interface IOrganization {
     phone: string;
     address?: string;
     createdBy: string; // UUID
+    subscriptionPlan: string; // Reference to Plan ID or Plan Name
+    planId?: string; // UUID reference to Plan model
+    subscriptionStatus: SubscriptionStatus;
+    trialEndsAt?: Date;
+    subscriptionEndsAt?: Date;
+    paystackCustomerCode?: string;
+    paystackSubscriptionCode?: string;
+    paystackPlanCode?: string;
+    revenuecatAppUserId?: string;
     createdAt: Date;
     updatedAt: Date;
 }
+
+
 
 /**
  * User Interface

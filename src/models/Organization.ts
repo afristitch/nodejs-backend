@@ -1,6 +1,7 @@
 import mongoose, { Schema } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
-import { IOrganization } from '../types';
+import { IOrganization, SubscriptionStatus } from '../types';
+
 
 /**
  * Organization Schema
@@ -43,6 +44,45 @@ const organizationSchema = new Schema<IOrganization>(
     createdBy: {
       type: String,
       required: true,
+    },
+    subscriptionPlan: {
+      type: String,
+      default: 'free',
+    },
+    planId: {
+      type: String,
+      ref: 'Plan',
+      default: null,
+    },
+    subscriptionStatus: {
+      type: String,
+      enum: Object.values(SubscriptionStatus),
+      default: SubscriptionStatus.TRIALING,
+    } as any,
+    trialEndsAt: {
+      type: Date,
+      default: null,
+    },
+
+    subscriptionEndsAt: {
+      type: Date,
+      default: null,
+    },
+    paystackCustomerCode: {
+      type: String,
+      default: null,
+    },
+    paystackSubscriptionCode: {
+      type: String,
+      default: null,
+    },
+    paystackPlanCode: {
+      type: String,
+      default: null,
+    },
+    revenuecatAppUserId: {
+      type: String,
+      default: null,
     },
   },
   {
