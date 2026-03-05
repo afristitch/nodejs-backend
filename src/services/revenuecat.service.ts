@@ -1,4 +1,5 @@
 import Organization from '../models/Organization';
+import User from '../models/User';
 import Plan from '../models/Plan';
 import SubscriptionPayment from '../models/SubscriptionPayment';
 import { SubscriptionStatus } from '../types';
@@ -61,7 +62,30 @@ export const handleWebhook = async (body: RevenueCatWebhookBody): Promise<void> 
         return;
     }
 
-    const organizationId = event.original_app_user_id || event.app_user_id;
+    const appUserId = event.app_user_id;
+    const originalAppUserId = event.original_app_user_id;
+
+    // Resolve organizationId. RevenueCat sends app_user_id which we set as the local User ID.
+    // Subscriptions however are linked to Organizations in our system.
+    let organizationId: string | null = null;
+
+    // 1. Try if the ID is an organization ID directly
+    const org = await Organization.findById(originalAppUserId || appUserId);
+    if (org) {
+        organizationId = org._id;
+    } else {
+        // 2. Try if the ID is a user ID
+        const user = await User.findById(appUserId) || await User.findById(originalAppUserId);
+        if (user) {
+            organizationId = user.organizationId;
+        }
+    }
+
+    if (!organizationId) {
+        console.error(`[RevenueCat] Could not resolve organization for app_user_id: ${appUserId} / ${originalAppUserId}`);
+        return;
+    }
+
     console.log(`[RevenueCat] Processing event: ${event.type} for org: ${organizationId}`);
 
     switch (event.type) {
@@ -116,13 +140,26 @@ const handleActivation = async (organizationId: string, event: RevenueCatEvent):
         ? new Date(event.expiration_at_ms)
         : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // Default: +30 days if no expiry provided
 
+    // If it's a non-renewing purchase (consumable or fixed period without renewal), 
+    // we might want to handle it differently, but for now we treat as activation.
+
     // Try to find a matching internal plan by product_id
-    const plan = await Plan.findOne({ isActive: true }).sort({ price: -1 }); // Fallback to highest plan
+    // If you have a naming convention or a mapping table, use it here.
+    // Fallback: stay on current plan but update status and end date, or pick highest if none.
+    let plan = await Plan.findOne({ name: { $regex: event.product_id, $options: 'i' } });
+    if (!plan && event.entitlement_ids?.includes('premium')) {
+        plan = await Plan.findOne({ name: /premium/i, isActive: true });
+    }
+
+    // Last resort fallback
+    if (!plan) {
+        plan = await Plan.findOne({ isActive: true }).sort({ price: -1 });
+    }
 
     const updateData: any = {
         subscriptionStatus: SubscriptionStatus.ACTIVE,
         subscriptionEndsAt,
-        revenuecatAppUserId: organizationId,
+        revenuecatAppUserId: event.app_user_id,
     };
 
     if (plan) {
@@ -139,7 +176,7 @@ const handleActivation = async (organizationId: string, event: RevenueCatEvent):
         amount: event.price_in_purchased_currency ?? event.price ?? 0,
         currency: event.currency ?? 'USD',
         months: deriveMonths(event.purchased_at_ms, event.expiration_at_ms),
-        reference: event.transaction_id,
+        reference: event.transaction_id || event.id,
         eventType: event.type,
         event,
     });

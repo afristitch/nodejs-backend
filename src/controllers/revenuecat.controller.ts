@@ -16,10 +16,16 @@ import revenuecatService, { RevenueCatWebhookBody } from '../services/revenuecat
 export const handleWebhook = async (req: Request, res: Response, next: NextFunction): Promise<void | Response> => {
     try {
         // Verify the authorization header
+        // Guide recommends X-RevenueCat-Auth, but we'll also support Bearer token in Authorization header
         const secret = process.env.REVENUECAT_WEBHOOK_SECRET;
         const authHeader = req.headers['authorization'];
+        const rcAuthHeader = req.headers['x-revenuecat-auth'];
 
-        if (secret && authHeader !== `Bearer ${secret}`) {
+        const isValidHeader = (secret && rcAuthHeader === secret) ||
+            (secret && authHeader === `Bearer ${secret}`);
+
+        if (secret && !isValidHeader) {
+            console.warn('[RevenueCat] Invalid webhook authorization attempt');
             return res.status(401).json({
                 success: false,
                 message: 'Invalid webhook authorization',
