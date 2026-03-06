@@ -27,15 +27,15 @@ router.post(
         body('clientId').notEmpty().withMessage('Client ID is required'),
         body('amount').isNumeric().withMessage('Amount must be a number'),
         body('status')
-            .optional()
+            .optional({ values: 'falsy' })
             .isIn(['pending', 'in-progress', 'fitting', 'completed', 'delivered'])
             .withMessage('Invalid status'),
         body('clothImageUrl')
-            .optional()
+            .optional({ values: 'falsy' })
             .isURL()
             .withMessage('Cloth image URL must be a valid URL'),
         body('clothSize')
-            .optional()
+            .optional({ values: 'falsy' })
             .isString()
             .isLength({ max: 100 })
             .withMessage('Cloth size must be a string of at most 100 characters'),
@@ -75,15 +75,15 @@ router.put(
     [
         body('amount').optional().isNumeric().withMessage('Amount must be a number'),
         body('status')
-            .optional()
+            .optional({ values: 'falsy' })
             .isIn(['pending', 'in-progress', 'fitting', 'completed', 'delivered'])
             .withMessage('Invalid status'),
         body('clothImageUrl')
-            .optional()
+            .optional({ values: 'falsy' })
             .isURL()
             .withMessage('Cloth image URL must be a valid URL'),
         body('clothSize')
-            .optional()
+            .optional({ values: 'falsy' })
             .isString()
             .isLength({ max: 100 })
             .withMessage('Cloth size must be a string of at most 100 characters'),

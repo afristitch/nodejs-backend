@@ -29,6 +29,7 @@ const clientSchema = new Schema<IClient>(
             lowercase: true,
             match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email address'],
             default: null,
+            set: (v: string) => (v === '' ? null : v),
         },
         photoUrl: {
             type: String,

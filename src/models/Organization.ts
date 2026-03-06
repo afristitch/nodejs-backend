@@ -30,10 +30,12 @@ const organizationSchema = new Schema<IOrganization>(
       trim: true,
       lowercase: true,
       match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email address'],
+      set: (v: string) => (v === '' ? null : v),
     },
     phone: {
       type: String,
       trim: true,
+      set: (v: string) => (v === '' ? null : v),
     },
     address: {
       type: String,
