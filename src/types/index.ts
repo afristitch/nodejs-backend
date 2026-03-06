@@ -71,7 +71,7 @@ export interface IOrganization {
     name: string;
     logoUrl?: string;
     email: string;
-    phone: string;
+    phone?: string;
     address?: string;
     createdBy: string; // UUID
     subscriptionPlan: string; // Reference to Plan ID or Plan Name
