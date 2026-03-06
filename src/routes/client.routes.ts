@@ -25,7 +25,7 @@ router.post(
     [
         body('name').trim().notEmpty().withMessage('Client name is required'),
         body('phone').trim().notEmpty().withMessage('Phone number is required'),
-        body('email').optional().isEmail().withMessage('Valid email is required'),
+        body('email').optional({ values: 'falsy' }).isEmail().withMessage('Valid email is required'),
         validate,
     ],
     clientController.createClient
@@ -55,7 +55,7 @@ router.put(
     [
         body('name').optional().trim().notEmpty().withMessage('Name cannot be empty'),
         body('phone').optional().trim().notEmpty().withMessage('Phone cannot be empty'),
-        body('email').optional().isEmail().withMessage('Valid email is required'),
+        body('email').optional({ values: 'falsy' }).isEmail().withMessage('Valid email is required'),
         validate,
     ],
     clientController.updateClient

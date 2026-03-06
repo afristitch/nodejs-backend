@@ -34,8 +34,8 @@ router.put(
     requireAdmin,
     [
         body('name').optional().trim().notEmpty().withMessage('Name cannot be empty'),
-        body('email').optional().isEmail().withMessage('Valid email is required'),
-        body('phone').optional().trim().notEmpty().withMessage('Phone cannot be empty'),
+        body('email').optional({ values: 'falsy' }).isEmail().withMessage('Valid email is required'),
+        body('phone').optional({ values: 'falsy' }).trim().notEmpty().withMessage('Phone cannot be empty'),
         validate,
     ],
     organizationController.updateOrganization

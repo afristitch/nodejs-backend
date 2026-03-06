@@ -56,8 +56,8 @@ router.put(
     requireAdmin,
     [
         body('name').optional().trim().notEmpty().withMessage('Name cannot be empty'),
-        body('email').optional().isEmail().withMessage('Valid email is required'),
-        body('role').optional().isIn(['ORG_ADMIN', 'STAFF']).withMessage('Role must be ORG_ADMIN or STAFF'),
+        body('email').optional({ values: 'falsy' }).isEmail().withMessage('Valid email is required'),
+        body('role').optional({ values: 'falsy' }).isIn(['ORG_ADMIN', 'STAFF']).withMessage('Role must be ORG_ADMIN or STAFF'),
         validate,
     ],
     userController.updateUser
