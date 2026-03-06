@@ -33,7 +33,6 @@ const organizationSchema = new Schema<IOrganization>(
     },
     phone: {
       type: String,
-      required: [true, 'Organization phone is required'],
       trim: true,
     },
     address: {
