@@ -5,11 +5,15 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import routes from './routes';
 import errorMiddleware from './middlewares/error.middleware';
+import { loggingMiddleware } from './middlewares/logging.middleware';
 
 /**
  * Express Application Setup
  */
 const app = express();
+
+// Global request logging
+app.use(loggingMiddleware);
 
 // Security middleware
 app.use(helmet());

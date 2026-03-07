@@ -1,10 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
+import logger from '../utils/logger';
 
 /**
  * Error Handling Middleware
  */
-const errorMiddleware = (err: any, _req: Request, res: Response, _next: NextFunction): void | Response => {
-    console.error(err.stack);
+const errorMiddleware = (err: any, req: Request, res: Response, _next: NextFunction): void | Response => {
+    // Log error with request details if available
+    logger.error(`${err.message}`, {
+        stack: err.stack,
+        url: req.originalUrl,
+        method: req.method,
+        userId: (req as any).user?._id,
+    });
 
     // Mongoose validation error
     if (err.name === 'ValidationError') {

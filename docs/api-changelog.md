@@ -56,3 +56,20 @@ This is **backend-only** (called by RevenueCat, not the app). No action needed i
 | `active` | Paid and active, check `subscriptionEndsAt` |
 | `cancelled` | Cancelled, access until `subscriptionEndsAt` |
 | `expired` | No access |
+| `cancelled` | Cancelled, access until `subscriptionEndsAt` |
+| `expired` | No access |
+
+---
+
+## 3. Optional Fields & Proper Logging (Latest)
+
+### Optional Email and Phone Fields
+**What changed:** Many optional fields on `Client`, `Order`, and `Organization` can now be sent as empty strings (`""`) from the frontend without causing validation errors.
+- **Backend handling:** Empty strings are automatically converted to `null` before saving.
+- **Routes updated:** `POST /api/v1/clients`, `PUT /api/v1/organization`, `PUT /api/v1/orders`, etc.
+
+### Proper Logging System
+**What changed:** A professional logging system with file rotation has been implemented.
+- **Request Logging:** Every API request is now logged with status, timing, and user context.
+- **Error Tracking:** Global errors are captured with stack traces.
+- **Admin API:** New system routes for platform owners to access logs (requires `SUPER_ADMIN` role).
