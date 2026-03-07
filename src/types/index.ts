@@ -4,6 +4,7 @@ import { Request } from 'express';
  * User Roles
  */
 export enum UserRole {
+    SUPER_ADMIN = 'SUPER_ADMIN',
     ORG_ADMIN = 'ORG_ADMIN',
     STAFF = 'STAFF',
 }
@@ -253,4 +254,32 @@ export interface AuthResponse {
     accessToken: string;
     refreshToken: string;
     organization?: IOrganization;
+}
+
+/**
+ * Device Token Interface
+ */
+export interface IDeviceToken {
+    _id: string; // UUID
+    userId: string; // UUID
+    token: string;
+    platform: 'ios' | 'android' | 'web';
+    lastUsedAt: Date;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+/**
+ * Notification Interface
+ */
+export interface INotification {
+    _id: string; // UUID
+    userId: string; // UUID
+    title: string;
+    message: string;
+    data?: any;
+    isRead: boolean;
+    type: string;
+    createdAt: Date;
+    updatedAt: Date;
 }

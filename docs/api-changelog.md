@@ -56,3 +56,30 @@ This is **backend-only** (called by RevenueCat, not the app). No action needed i
 | `active` | Paid and active, check `subscriptionEndsAt` |
 | `cancelled` | Cancelled, access until `subscriptionEndsAt` |
 | `expired` | No access |
+
+---
+
+## 3. Optional Fields & Proper Logging
+
+### Optional Email and Phone Fields
+**What changed:** Many optional fields on `Client`, `Order`, and `Organization` can now be sent as empty strings (`""`) from the frontend without causing validation errors.
+- **Backend handling:** Empty strings are automatically converted to `null` before saving.
+
+### Proper Logging System
+**What changed:** A professional logging system with file rotation has been implemented.
+- **Admin API:** New system routes for platform owners to access logs (requires `SUPER_ADMIN` role).
+
+---
+
+## 4. Firebase Notifications (Latest)
+
+### Push & In-App Notifications
+**What changed:** A new notification system has been added to support real-time push messages via Firebase and persistent in-app notification history.
+
+- **FCM Tokens:** Frontend must register the device token after login.
+  - `POST /api/v1/notifications/device-tokens` (body: `{ token, platform }`)
+- **Notification History:** Fetch user's notification list.
+  - `GET /api/v1/notifications`
+- **Read Status:** Mark individual or all notifications as read.
+  - `PATCH /api/v1/notifications/:id/read`
+  - `PATCH /api/v1/notifications/read-all`

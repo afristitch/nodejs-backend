@@ -11,6 +11,8 @@ import paymentRoutes from './payment.routes';
 import planRoutes from './plan.routes';
 import smsRoutes from './sms.routes';
 import revenuecatRoutes from './revenuecat.routes';
+import systemRoutes from './system.routes';
+import notificationRoutes from './notification.routes';
 
 
 const router = express.Router();
@@ -42,6 +44,8 @@ router.use('/payments', paymentRoutes);
 router.use('/plans', planRoutes);
 router.use('/sms', smsRoutes);
 router.use('/revenuecat', revenuecatRoutes);
+router.use('/system', systemRoutes);
+router.use('/notifications', notificationRoutes);
 
 
 export default router;

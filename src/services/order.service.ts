@@ -25,6 +25,21 @@ export const createOrder = async (
     });
 
     await order.save();
+
+    // Trigger notification
+    try {
+        const notificationService = require('./notification.service').default;
+        await notificationService.sendToUser(userId, {
+            title: 'New Order Created',
+            message: `Order #${orderNumber} has been successfully created.`,
+            type: 'ORDER_CREATED',
+            data: { orderId: order._id.toString() },
+        });
+    } catch (error) {
+        // Don't fail the request if notification fails
+        console.error('Failed to send order creation notification', error);
+    }
+
     return order;
 };
 
@@ -38,16 +53,16 @@ export const getOrders = async (
 ): Promise<{ orders: IOrder[]; total: number }> => {
 
     const orders = await Order.find({ organizationId })
-  .populate('client', 'name phone email photoUrl');
+        .populate('client', 'name phone email photoUrl');
 
-console.log("STEP 4:", orders.length);
+    console.log("STEP 4:", orders.length);
 
 
 
-console.log("STEP 1 - FILTERS:", filters);
-console.log("STEP 1 - OPTIONS:", options);
+    console.log("STEP 1 - FILTERS:", filters);
+    console.log("STEP 1 - OPTIONS:", options);
 
-return { orders, total: orders.length };
+    return { orders, total: orders.length };
 
 };
 
@@ -107,6 +122,19 @@ export const updateOrderStatus = async (
         throw new Error('Order not found');
     }
 
+    // Trigger notification
+    try {
+        const notificationService = require('./notification.service').default;
+        await notificationService.sendToUser(order.createdBy, {
+            title: 'Order Status Updated',
+            message: `Order #${order.orderNumber} is now ${status}.`,
+            type: 'ORDER_STATUS_UPDATED',
+            data: { orderId: order._id.toString(), status },
+        });
+    } catch (error) {
+        console.error('Failed to send status update notification', error);
+    }
+
     return order;
 };
 
@@ -131,6 +159,19 @@ export const recordPayment = async (
 
     order.amountPaid += amount;
     await order.save();
+
+    // Trigger notification
+    try {
+        const notificationService = require('./notification.service').default;
+        await notificationService.sendToUser(order.createdBy, {
+            title: 'Payment Received',
+            message: `A payment of ${amount} has been recorded for Order #${order.orderNumber}.`,
+            type: 'PAYMENT_RECEIVED',
+            data: { orderId: order._id.toString(), amount },
+        });
+    } catch (error) {
+        console.error('Failed to send payment notification', error);
+    }
 
     return order;
 };
