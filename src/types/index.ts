@@ -84,6 +84,7 @@ export interface IOrganization {
     paystackSubscriptionCode?: string;
     paystackPlanCode?: string;
     revenuecatAppUserId?: string;
+    trialExpiryNotificationSent?: boolean;
     createdAt: Date;
     updatedAt: Date;
 }

@@ -169,6 +169,19 @@ const handleActivation = async (organizationId: string, event: RevenueCatEvent):
 
     await Organization.findByIdAndUpdate(organizationId, updateData);
 
+    // Trigger notification
+    try {
+        const notificationService = require('./notification.service').default;
+        await notificationService.sendToUser(organization.createdBy, {
+            title: 'Subscription Activated',
+            message: `Your ${plan?.name || 'premium'} plan is now active until ${subscriptionEndsAt.toLocaleDateString()}.`,
+            type: 'SUBSCRIPTION_ACTIVATED',
+            data: { planName: plan?.name, status: SubscriptionStatus.ACTIVE },
+        });
+    } catch (error) {
+        console.error('Failed to send subscription activation notification', error);
+    }
+
     // Audit record
     await recordPayment({
         organizationId,
@@ -199,6 +212,19 @@ const handleCancellation = async (organizationId: string, event: RevenueCatEvent
         subscriptionStatus: SubscriptionStatus.CANCELLED,
     });
 
+    // Trigger notification
+    try {
+        const notificationService = require('./notification.service').default;
+        await notificationService.sendToUser(organization.createdBy, {
+            title: 'Subscription Cancelled',
+            message: `Your subscription has been cancelled. You will have access until ${organization.subscriptionEndsAt?.toLocaleDateString()}.`,
+            type: 'SUBSCRIPTION_CANCELLED',
+            data: { status: SubscriptionStatus.CANCELLED },
+        });
+    } catch (error) {
+        console.error('Failed to send subscription cancellation notification', error);
+    }
+
     console.log(`[RevenueCat] Subscription cancelled for org ${organizationId}. Reason: ${event.cancel_reason}`);
 };
 
@@ -209,6 +235,23 @@ const handleExpiration = async (organizationId: string, event: RevenueCatEvent):
     await Organization.findByIdAndUpdate(organizationId, {
         subscriptionStatus: SubscriptionStatus.EXPIRED,
     });
+
+    // We need the organization to get the owner
+    const organization = await Organization.findById(organizationId);
+    if (organization) {
+        // Trigger notification
+        try {
+            const notificationService = require('./notification.service').default;
+            await notificationService.sendToUser(organization.createdBy, {
+                title: 'Subscription Expired',
+                message: 'Your subscription has expired. Please renew to continue using all features.',
+                type: 'SUBSCRIPTION_EXPIRED',
+                data: { status: SubscriptionStatus.EXPIRED },
+            });
+        } catch (error) {
+            console.error('Failed to send subscription expiration notification', error);
+        }
+    }
 
     console.log(`[RevenueCat] Subscription expired for org ${organizationId}. Reason: ${event.expiration_reason}`);
 };
