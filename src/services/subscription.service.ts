@@ -102,10 +102,44 @@ export const getSubscriptionStatus = async (organizationId: string) => {
     const isTrialing = organization.subscriptionStatus === SubscriptionStatus.TRIALING;
     const isExpired = trialEndsAt ? new Date(trialEndsAt) < new Date() : false;
 
+    const daysLeft = trialEndsAt
+        ? Math.max(0, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+        : 0;
+
     // Update status to EXPIRED if trial has ended
     if (isTrialing && isExpired) {
         organization.subscriptionStatus = SubscriptionStatus.EXPIRED;
         await organization.save();
+
+        // Trigger notification
+        try {
+            const notificationService = require('./notification.service').default;
+            await notificationService.sendToUser(organization.createdBy, {
+                title: 'Free Trial Expired',
+                message: 'Your free trial has ended. Please upgrade to a premium plan to continue using all features.',
+                type: 'TRIAL_EXPIRED',
+                data: { status: SubscriptionStatus.EXPIRED },
+            });
+        } catch (notificationError) {
+            console.error('Failed to send trial expiration notification', notificationError);
+        }
+    } else if (isTrialing && !isExpired && daysLeft <= 3 && !organization.trialExpiryNotificationSent) {
+        // Trigger Trial Near Expiry notification
+        try {
+            const notificationService = require('./notification.service').default;
+            await notificationService.sendToUser(organization.createdBy, {
+                title: 'Free Trial Nearing Expiry',
+                message: `Your free trial will end in ${daysLeft} day${daysLeft === 1 ? '' : 's'}. Upgrade now to ensure uninterrupted access!`,
+                type: 'TRIAL_NEAR_EXPIRY',
+                data: { daysLeft, status: SubscriptionStatus.TRIALING },
+            });
+
+            // Mark as sent
+            organization.trialExpiryNotificationSent = true;
+            await organization.save();
+        } catch (notificationError) {
+            console.error('Failed to send trial near-expiry notification', notificationError);
+        }
     }
 
     return {
@@ -114,9 +148,7 @@ export const getSubscriptionStatus = async (organizationId: string) => {
         trialEndsAt: organization.trialEndsAt,
         subscriptionEndsAt: organization.subscriptionEndsAt,
         isPremium: organization.subscriptionStatus === SubscriptionStatus.ACTIVE,
-        daysLeft: trialEndsAt
-            ? Math.max(0, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
-            : 0
+        daysLeft
     };
 };
 

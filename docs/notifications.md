@@ -67,6 +67,12 @@ The backend currently triggers notifications for the following events:
 1.  **`ORDER_CREATED`**: Sent when a new order is successfully saved.
 2.  **`ORDER_STATUS_UPDATED`**: Sent when an order status changes (e.g., Pending -> Completed).
 3.  **`PAYMENT_RECEIVED`**: Sent when a payment is recorded against an order.
+4.  **`SUBSCRIPTION_ACTIVATED`**: Sent when a new subscription is started.
+5.  **`SUBSCRIPTION_RENEWED`**: Sent when an existing subscription is renewed.
+6.  **`SUBSCRIPTION_CANCELLED`**: Sent when a subscription is cancelled (but still active until period end).
+7.  **`SUBSCRIPTION_EXPIRED`**: Sent when a subscription (or trial) has fully expired.
+8.  **`TRIAL_EXPIRED`**: Specific notification when a free trial ends.
+9.  **`TRIAL_NEAR_EXPIRY`**: Sent when a free trial is within 3 days of ending.
 
 ### Handling Payload Data
 Every notification includes a `data` object with relevant IDs (e.g., `orderId`). You can use this to navigate the user directly to the relevant screen when they tap a push notification.

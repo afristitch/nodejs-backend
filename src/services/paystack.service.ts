@@ -151,6 +151,19 @@ const updateSubscriptionStatus = async (organizationId: string, paymentData: any
     // Perform Update
     await Organization.findByIdAndUpdate(organizationId, updateData);
 
+    // Trigger notification
+    try {
+        const notificationService = require('./notification.service').default;
+        await notificationService.sendToUser(organization.createdBy, {
+            title: isPlanRenewal ? 'Subscription Renewed' : 'Subscription Activated',
+            message: `Your ${updateData.subscriptionPlan || 'premium'} plan is now active until ${subscriptionEndsAt.toLocaleDateString()}.`,
+            type: isPlanRenewal ? 'SUBSCRIPTION_RENEWED' : 'SUBSCRIPTION_ACTIVATED',
+            data: { planName: updateData.subscriptionPlan, status: SubscriptionStatus.ACTIVE },
+        });
+    } catch (error) {
+        console.error('Failed to send subscription notification (Paystack)', error);
+    }
+
     // Record Payment for Audit
     try {
         await SubscriptionPayment.create({

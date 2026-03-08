@@ -85,6 +85,10 @@ const organizationSchema = new Schema<IOrganization>(
       type: String,
       default: null,
     },
+    trialExpiryNotificationSent: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
