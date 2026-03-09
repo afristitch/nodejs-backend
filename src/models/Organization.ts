@@ -60,25 +60,9 @@ const organizationSchema = new Schema<IOrganization>(
       enum: Object.values(SubscriptionStatus),
       default: SubscriptionStatus.TRIALING,
     } as any,
-    trialEndsAt: {
-      type: Date,
-      default: null,
-    },
 
     subscriptionEndsAt: {
       type: Date,
-      default: null,
-    },
-    paystackCustomerCode: {
-      type: String,
-      default: null,
-    },
-    paystackSubscriptionCode: {
-      type: String,
-      default: null,
-    },
-    paystackPlanCode: {
-      type: String,
       default: null,
     },
     revenuecatAppUserId: {

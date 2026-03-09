@@ -33,8 +33,8 @@ export const registerOrganization = async (orgData: any, userData: any): Promise
     const planService = require('./plan.service').default;
     const freePlan = await planService.getPlanByName('free');
 
-    const trialEndsAt = new Date();
-    trialEndsAt.setDate(trialEndsAt.getDate() + 14);
+    const subscriptionEndsAt = new Date();
+    subscriptionEndsAt.setDate(subscriptionEndsAt.getDate() + 14);
 
     const organization = new Organization({
         ...orgData,
@@ -42,7 +42,7 @@ export const registerOrganization = async (orgData: any, userData: any): Promise
         subscriptionStatus: 'trialing',
         subscriptionPlan: 'free',
         planId: freePlan?._id || null,
-        trialEndsAt,
+        subscriptionEndsAt,
     });
 
 

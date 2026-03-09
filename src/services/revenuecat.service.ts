@@ -138,7 +138,7 @@ export const handleWebhook = async (body: RevenueCatWebhookBody): Promise<void> 
     }
 
     // Record the event for idempotency and auditing
-    // Activation already records its own payment, but we need to record others too
+    // activation already records its own payment, but we need to record others too
     if (['CANCELLATION', 'EXPIRATION', 'BILLING_ISSUE', 'PRODUCT_CHANGE', 'TEST'].includes(event.type)) {
         // Ensure we have current organization data for the planId
         const currentOrg = org || await Organization.findById(organizationId);
@@ -154,7 +154,7 @@ export const handleWebhook = async (body: RevenueCatWebhookBody): Promise<void> 
             event,
         });
     }
-};
+}
 
 /**
  * Activate or extend an organization's subscription
@@ -166,19 +166,32 @@ const handleActivation = async (organizationId: string, event: RevenueCatEvent):
         return;
     }
 
+    const isTrial = event.period_type === 'TRIAL';
+
+    // Update common mapping field
+    const updateData: any = {
+        revenuecatAppUserId: event.app_user_id,
+    };
+
+    if (isTrial) {
+        // Trials are automatic and cannot be extended via webhook
+        // We only link the user ID for future mapping
+        console.log(`[RevenueCat] Trial event linked for org ${organizationId}, but dates preserved as per policy.`);
+        await Organization.findByIdAndUpdate(organizationId, updateData);
+        return;
+    }
+
+    // Handle Paid Subscriptions
+    const status = SubscriptionStatus.ACTIVE;
+
     // Calculate expiration date from the event
-    const subscriptionEndsAt = event.expiration_at_ms
+    const expirationDate = event.expiration_at_ms
         ? new Date(event.expiration_at_ms)
         : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // Default: +30 days if no expiry provided
 
-    // If it's a non-renewing purchase (consumable or fixed period without renewal), 
-    // we might want to handle it differently, but for now we treat as activation.
-
     // Try to find a matching internal plan by product_id
-    // If you have a naming convention or a mapping table, use it here.
-    // Fallback: stay on current plan but update status and end date, or pick highest if none.
     let plan = await Plan.findOne({ name: { $regex: event.product_id, $options: 'i' } });
-    if (!plan && event.entitlement_ids?.includes('premium')) {
+    if (!plan && (event.entitlement_ids?.includes('premium') || event.entitlement_ids?.includes('pro'))) {
         plan = await Plan.findOne({ name: /premium/i, isActive: true });
     }
 
@@ -187,11 +200,8 @@ const handleActivation = async (organizationId: string, event: RevenueCatEvent):
         plan = await Plan.findOne({ isActive: true }).sort({ price: -1 });
     }
 
-    const updateData: any = {
-        subscriptionStatus: SubscriptionStatus.ACTIVE,
-        subscriptionEndsAt,
-        revenuecatAppUserId: event.app_user_id,
-    };
+    updateData.subscriptionStatus = status;
+    updateData.subscriptionEndsAt = expirationDate;
 
     if (plan) {
         updateData.planId = plan._id;
@@ -200,14 +210,16 @@ const handleActivation = async (organizationId: string, event: RevenueCatEvent):
 
     await Organization.findByIdAndUpdate(organizationId, updateData);
 
+    console.log(`[RevenueCat] Subscription activated for org ${organizationId}. Ends: ${expirationDate.toISOString()}`);
+
     // Trigger notification
     try {
         const notificationService = require('./notification.service').default;
         await notificationService.sendToUser(organization.createdBy, {
             title: 'Subscription Activated',
-            message: `Your ${plan?.name || 'premium'} plan is now active until ${subscriptionEndsAt.toLocaleDateString()}.`,
+            message: `Your ${plan?.name || 'premium'} plan is now active until ${expirationDate.toLocaleDateString()}.`,
             type: 'SUBSCRIPTION_ACTIVATED',
-            data: { planName: plan?.name, status: SubscriptionStatus.ACTIVE },
+            data: { planName: plan?.name, status },
         });
     } catch (error) {
         console.error('Failed to send subscription activation notification', error);
@@ -224,8 +236,6 @@ const handleActivation = async (organizationId: string, event: RevenueCatEvent):
         eventType: event.type,
         event,
     });
-
-    console.log(`[RevenueCat] Subscription activated for org ${organizationId}. Ends: ${subscriptionEndsAt.toISOString()}`);
 };
 
 /**

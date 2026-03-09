@@ -135,7 +135,6 @@ const updateSubscriptionStatus = async (organizationId: string, paymentData: any
 
     const updateData: any = {
         subscriptionStatus: SubscriptionStatus.ACTIVE,
-        paystackCustomerCode: paymentData.customer?.customer_code,
         subscriptionEndsAt,
     };
 
