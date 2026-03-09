@@ -86,6 +86,19 @@ export const handleWebhook = async (body: RevenueCatWebhookBody): Promise<void> 
         return;
     }
 
+    // Check for idempotency using the unique RevenueCat event ID
+    const isProcessed = await SubscriptionPayment.exists({
+        $or: [
+            { reference: `rc_event_${event.id}` },
+            { "metadata.id": event.id }
+        ]
+    });
+
+    if (isProcessed) {
+        console.log(`[RevenueCat] Event already processed: ${event.type} (${event.id})`);
+        return;
+    }
+
     console.log(`[RevenueCat] Processing event: ${event.type} for org: ${organizationId}`);
 
     switch (event.type) {
@@ -122,6 +135,24 @@ export const handleWebhook = async (body: RevenueCatWebhookBody): Promise<void> 
 
         default:
             console.log(`[RevenueCat] Unhandled event type: ${event.type}`);
+    }
+
+    // Record the event for idempotency and auditing
+    // Activation already records its own payment, but we need to record others too
+    if (['CANCELLATION', 'EXPIRATION', 'BILLING_ISSUE', 'PRODUCT_CHANGE', 'TEST'].includes(event.type)) {
+        // Ensure we have current organization data for the planId
+        const currentOrg = org || await Organization.findById(organizationId);
+
+        await recordPayment({
+            organizationId,
+            planId: currentOrg?.planId || 'unknown',
+            amount: 0,
+            currency: event.currency || 'USD',
+            months: 0,
+            reference: `event_${event.id}`,
+            eventType: event.type,
+            event,
+        });
     }
 };
 
@@ -189,7 +220,7 @@ const handleActivation = async (organizationId: string, event: RevenueCatEvent):
         amount: event.price_in_purchased_currency ?? event.price ?? 0,
         currency: event.currency ?? 'USD',
         months: deriveMonths(event.purchased_at_ms, event.expiration_at_ms),
-        reference: event.transaction_id || event.id,
+        reference: `event_${event.id}`, // Use event ID for idempotency 
         eventType: event.type,
         event,
     });
