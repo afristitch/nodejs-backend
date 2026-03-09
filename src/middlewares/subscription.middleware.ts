@@ -28,35 +28,21 @@ const subscriptionMiddleware = async (req: AuthRequest, res: Response, next: Nex
 
         const now = new Date();
 
-        // 1. Check if trialing and expired
-        if (organization.subscriptionStatus === SubscriptionStatus.TRIALING) {
-            if (organization.trialEndsAt && organization.trialEndsAt < now) {
-                // Auto-expire trial if we haven't already
+        const isTrialing = organization.subscriptionStatus === SubscriptionStatus.TRIALING;
+        const isActive = organization.subscriptionStatus === SubscriptionStatus.ACTIVE;
+
+        if (isTrialing || isActive) {
+            const endsAt = organization.subscriptionEndsAt;
+            if (endsAt && endsAt < now) {
                 organization.subscriptionStatus = SubscriptionStatus.EXPIRED;
                 await organization.save();
 
-                return res.status(403).json({
-                    success: false,
-                    message: 'Free trial has expired. Please subscribe to continue.',
-                    code: 'TRIAL_EXPIRED',
-                });
-            }
-            return next();
-        }
+                const message = isTrialing
+                    ? 'Free trial has expired. Please subscribe to continue.'
+                    : 'Subscription has expired. Please renew to continue.';
+                const code = isTrialing ? 'TRIAL_EXPIRED' : 'SUBSCRIPTION_EXPIRED';
 
-        // 2. Check if active subscription
-        if (organization.subscriptionStatus === SubscriptionStatus.ACTIVE) {
-            // Subscription status is usually updated via webhooks, 
-            // but we can add a local check if subscriptionEndsAt exists
-            if (organization.subscriptionEndsAt && organization.subscriptionEndsAt < now) {
-                organization.subscriptionStatus = SubscriptionStatus.EXPIRED;
-                await organization.save();
-
-                return res.status(403).json({
-                    success: false,
-                    message: 'Subscription has expired. Please renew to continue.',
-                    code: 'SUBSCRIPTION_EXPIRED',
-                });
+                return res.status(403).json({ success: false, message, code });
             }
             return next();
         }

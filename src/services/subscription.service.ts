@@ -98,12 +98,12 @@ export const getSubscriptionStatus = async (organizationId: string) => {
         throw new Error('Organization not found');
     }
 
-    const trialEndsAt = organization.trialEndsAt;
+    const subscriptionEndsAt = organization.subscriptionEndsAt;
     const isTrialing = organization.subscriptionStatus === SubscriptionStatus.TRIALING;
-    const isExpired = trialEndsAt ? new Date(trialEndsAt) < new Date() : false;
+    const isExpired = subscriptionEndsAt ? new Date(subscriptionEndsAt) < new Date() : false;
 
-    const daysLeft = trialEndsAt
-        ? Math.max(0, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    const daysLeft = subscriptionEndsAt
+        ? Math.max(0, Math.ceil((new Date(subscriptionEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
         : 0;
 
     // Update status to EXPIRED if trial has ended
@@ -145,7 +145,6 @@ export const getSubscriptionStatus = async (organizationId: string) => {
     return {
         plan: organization.subscriptionPlan,
         status: organization.subscriptionStatus,
-        trialEndsAt: organization.trialEndsAt,
         subscriptionEndsAt: organization.subscriptionEndsAt,
         isPremium: organization.subscriptionStatus === SubscriptionStatus.ACTIVE,
         daysLeft

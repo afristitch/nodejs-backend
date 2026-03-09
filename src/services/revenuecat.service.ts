@@ -138,7 +138,7 @@ export const handleWebhook = async (body: RevenueCatWebhookBody): Promise<void> 
     }
 
     // Record the event for idempotency and auditing
-    // Activation already records its own payment, but we need to record others too
+    // activation already records its own payment, but we need to record others too
     if (['CANCELLATION', 'EXPIRATION', 'BILLING_ISSUE', 'PRODUCT_CHANGE', 'TEST'].includes(event.type)) {
         // Ensure we have current organization data for the planId
         const currentOrg = org || await Organization.findById(organizationId);
@@ -154,7 +154,7 @@ export const handleWebhook = async (body: RevenueCatWebhookBody): Promise<void> 
             event,
         });
     }
-};
+}
 
 /**
  * Activate or extend an organization's subscription
@@ -202,7 +202,6 @@ const handleActivation = async (organizationId: string, event: RevenueCatEvent):
 
     updateData.subscriptionStatus = status;
     updateData.subscriptionEndsAt = expirationDate;
-    updateData.trialEndsAt = null; // Clear trial data once they subscribe
 
     if (plan) {
         updateData.planId = plan._id;

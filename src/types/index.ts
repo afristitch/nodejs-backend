@@ -78,11 +78,7 @@ export interface IOrganization {
     subscriptionPlan: string; // Reference to Plan ID or Plan Name
     planId?: string; // UUID reference to Plan model
     subscriptionStatus: SubscriptionStatus;
-    trialEndsAt?: Date;
     subscriptionEndsAt?: Date;
-    paystackCustomerCode?: string;
-    paystackSubscriptionCode?: string;
-    paystackPlanCode?: string;
     revenuecatAppUserId?: string;
     trialExpiryNotificationSent?: boolean;
     createdAt: Date;
