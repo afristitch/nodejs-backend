@@ -212,13 +212,18 @@ const handleActivation = async (organizationId: string, event: RevenueCatEvent):
 
     console.log(`[RevenueCat] Subscription activated for org ${organizationId}. Ends: ${expirationDate.toISOString()}`);
 
+    // Differentiate between initial activation and renewal
+    const isRenewal = organization.subscriptionStatus === SubscriptionStatus.ACTIVE;
+
     // Trigger notification
     try {
         const notificationService = require('./notification.service').default;
         await notificationService.sendToUser(organization.createdBy, {
-            title: 'Subscription Activated',
-            message: `Your ${plan?.name || 'premium'} plan is now active until ${expirationDate.toLocaleDateString()}.`,
-            type: 'SUBSCRIPTION_ACTIVATED',
+            title: isRenewal ? 'Subscription Renewed' : 'Subscription Activated',
+            message: isRenewal
+                ? `Your ${plan?.name || 'premium'} plan has been renewed and is now valid until ${expirationDate.toLocaleDateString()}.`
+                : `Your ${plan?.name || 'premium'} plan is now active until ${expirationDate.toLocaleDateString()}.`,
+            type: isRenewal ? 'SUBSCRIPTION_RENEWED' : 'SUBSCRIPTION_ACTIVATED',
             data: { planName: plan?.name, status },
         });
     } catch (error) {
