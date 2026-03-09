@@ -13,6 +13,9 @@ import './config/firebase';
  */
 const app = express();
 
+// Trust proxy for rate limiting (needed for Render/Cloudflare)
+app.set('trust proxy', 1);
+
 // Global request logging
 app.use(loggingMiddleware);
 

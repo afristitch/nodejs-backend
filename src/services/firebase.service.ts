@@ -76,7 +76,16 @@ class FirebaseService {
                 failureCount: response.failureCount,
             });
 
-            // Handle invalid tokens if needed (response.responses contains details)
+            if (response.failureCount > 0) {
+                response.responses.forEach((resp, idx) => {
+                    if (!resp.success) {
+                        logger.error('Individual multicast failure', {
+                            token: tokens[idx],
+                            error: resp.error
+                        });
+                    }
+                });
+            }
         } catch (error) {
             logger.error('Error sending multicast notification', { error });
         }
