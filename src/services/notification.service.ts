@@ -73,15 +73,24 @@ class NotificationService {
 
             // 3. Send push notifications to all devices
             const tokens = deviceTokens.map(dt => dt.token);
+
+            // FCM data fields must be strings
+            const stringifiedData: Record<string, string> = {
+                notificationId: notification._id.toString(),
+                type: notificationData.type,
+            };
+
+            if (notificationData.data) {
+                Object.entries(notificationData.data).forEach(([key, value]) => {
+                    stringifiedData[key] = String(value);
+                });
+            }
+
             await firebaseService.sendMulticastNotification(
                 tokens,
                 notificationData.title,
                 notificationData.message,
-                {
-                    ...notificationData.data,
-                    notificationId: notification._id.toString(),
-                    type: notificationData.type,
-                }
+                stringifiedData
             );
         } catch (error) {
             logger.error('Error sending notification to user', { error, userId });
