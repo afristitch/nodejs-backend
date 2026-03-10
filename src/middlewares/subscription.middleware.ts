@@ -42,7 +42,7 @@ const subscriptionMiddleware = async (req: AuthRequest, res: Response, next: Nex
                     : 'Subscription has expired. Please renew to continue.';
                 const code = isTrialing ? 'TRIAL_EXPIRED' : 'SUBSCRIPTION_EXPIRED';
 
-                return res.status(403).json({ success: false, message, code });
+                return res.status(406).json({ success: false, message, code });
             }
             return next();
         }
@@ -50,7 +50,7 @@ const subscriptionMiddleware = async (req: AuthRequest, res: Response, next: Nex
         // 3. Block if expired or cancelled
         if (organization.subscriptionStatus === SubscriptionStatus.EXPIRED ||
             organization.subscriptionStatus === SubscriptionStatus.CANCELLED) {
-            return res.status(403).json({
+            return res.status(406).json({
                 success: false,
                 message: 'Access denied. Please subscribe to a plan to continue.',
                 code: 'NO_ACTIVE_SUBSCRIPTION',

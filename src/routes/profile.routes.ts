@@ -6,10 +6,9 @@ import subscriptionMiddleware from '../middlewares/subscription.middleware';
 
 const router = express.Router();
 
-// Apply auth, organization and subscription middleware to all routes
+// Apply auth and organization middleware to all routes
 router.use(authMiddleware);
 router.use(organizationMiddleware);
-router.use(subscriptionMiddleware);
 
 /**
  * @route   GET /api/v1/profile/me
@@ -17,6 +16,9 @@ router.use(subscriptionMiddleware);
  * @access  Private
  */
 router.get('/me', profileController.getMyProfile);
+
+// Apply subscription middleware to subsequent routes
+router.use(subscriptionMiddleware);
 
 
 /**
