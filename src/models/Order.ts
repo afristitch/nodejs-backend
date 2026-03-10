@@ -24,7 +24,7 @@ const orderSchema = new Schema<IOrder>(
         orderNumber: {
             type: String,
             required: true,
-            unique: true,
+            // Removed global unique constraint to allow same ORD numbers in different organizations
         },
         status: {
             type: String,
@@ -87,7 +87,7 @@ const orderSchema = new Schema<IOrder>(
 // Indexes
 orderSchema.index({ organizationId: 1, status: 1 });
 orderSchema.index({ organizationId: 1, clientId: 1 });
-orderSchema.index({ organizationId: 1, orderNumber: 1 });
+orderSchema.index({ organizationId: 1, orderNumber: 1 }, { unique: true });
 orderSchema.index({ organizationId: 1, paymentStatus: 1 });
 
 // Virtual field for balance
