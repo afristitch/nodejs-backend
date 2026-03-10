@@ -1,5 +1,4 @@
 import Order from '../models/Order';
-import mongoose from 'mongoose';
 
 /**
  * Standalone Verification Script for Order Number Generation
