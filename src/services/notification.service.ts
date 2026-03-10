@@ -1,6 +1,7 @@
 import Notification from '../models/Notification';
 import DeviceToken from '../models/DeviceToken';
 import firebaseService from './firebase.service';
+import apnsService from './apns.service';
 import logger from '../utils/logger';
 import { INotification } from '../types';
 
@@ -72,7 +73,8 @@ class NotificationService {
             }
 
             // 3. Send push notifications to all devices
-            const tokens = deviceTokens.map(dt => dt.token);
+            const iosTokens = deviceTokens.filter(dt => dt.platform === 'ios').map(dt => dt.token);
+            const androidTokens = deviceTokens.filter(dt => dt.platform === 'android').map(dt => dt.token);
 
             // FCM data fields must be strings
             const stringifiedData: Record<string, string> = {
@@ -86,12 +88,25 @@ class NotificationService {
                 });
             }
 
-            await firebaseService.sendMulticastNotification(
-                tokens,
-                notificationData.title,
-                notificationData.message,
-                stringifiedData
-            );
+            // Send to Android via FCM (multicast)
+            if (androidTokens.length > 0) {
+                await firebaseService.sendMulticastNotification(
+                    androidTokens,
+                    notificationData.title,
+                    notificationData.message,
+                    stringifiedData
+                );
+            }
+
+            // Send to iOS via APNS
+            if (iosTokens.length > 0) {
+                await apnsService.sendMulticastNotification(
+                    iosTokens,
+                    notificationData.title,
+                    notificationData.message,
+                    notificationData.data || {}
+                );
+            }
         } catch (error) {
             logger.error('Error sending notification to user', { error, userId });
         }
