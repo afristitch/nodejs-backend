@@ -27,6 +27,13 @@ export const seedGlobalTemplates = async (userId: string = 'SYSTEM'): Promise<vo
                 createdBy: userId
             });
             console.log(`Global template created: ${templateData.name}`);
+        } else {
+            // Update iconUrl if it's missing or different
+            if (existingTemplate.iconUrl !== (templateData as any).iconUrl) {
+                existingTemplate.iconUrl = (templateData as any).iconUrl;
+                await existingTemplate.save();
+                console.log(`Global template updated: ${templateData.name} (iconUrl)`);
+            }
         }
     }
 };

@@ -24,6 +24,11 @@ const measurementTemplateSchema = new Schema<IMeasurementTemplate>(
             maxlength: [500, 'Description cannot exceed 500 characters'],
             default: null,
         },
+        iconUrl: {
+            type: String,
+            trim: true,
+            default: null,
+        },
         fields: [
             {
                 name: {

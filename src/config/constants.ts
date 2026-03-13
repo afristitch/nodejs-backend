@@ -8,6 +8,7 @@ export const DEFAULT_TEMPLATES = [
     {
         name: 'Male Full Body',
         description: 'Standard measurement template for male full body garments',
+        iconUrl: 'https://img.icons8.com/ios-filled/100/shirt.png',
         fields: [
             { name: 'Neck', unit: 'inches' },
             { name: 'Chest', unit: 'inches' },
@@ -29,6 +30,7 @@ export const DEFAULT_TEMPLATES = [
     {
         name: 'Female Full Body',
         description: 'Standard measurement template for female full body garments',
+        iconUrl: 'https://img.icons8.com/ios-filled/100/dress.png',
         fields: [
             { name: 'Neck', unit: 'inches' },
             { name: 'Bust', unit: 'inches' },
