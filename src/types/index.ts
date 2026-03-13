@@ -143,6 +143,7 @@ export interface IMeasurementTemplate {
     _id: string; // UUID
     name: string;
     description?: string;
+    iconUrl?: string;
     fields: IMeasurementField[];
     organizationId: string; // UUID
     createdBy: string; // UUID
