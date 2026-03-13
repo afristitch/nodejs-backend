@@ -1,6 +1,7 @@
 import MeasurementTemplate from '../models/MeasurementTemplate';
 import Measurement from '../models/Measurement';
 import { IMeasurementTemplate, IMeasurement, PaginationOptions } from '../types';
+import { SYSTEM_ORG_ID, DEFAULT_TEMPLATES } from '../config/constants';
 
 /**
  * Measurement Service
@@ -8,6 +9,27 @@ import { IMeasurementTemplate, IMeasurement, PaginationOptions } from '../types'
  */
 
 // ==================== TEMPLATES ====================
+
+/**
+ * Seed global measurement templates
+ */
+export const seedGlobalTemplates = async (userId: string = 'SYSTEM'): Promise<void> => {
+    for (const templateData of DEFAULT_TEMPLATES) {
+        const existingTemplate = await MeasurementTemplate.findOne({
+            name: templateData.name,
+            organizationId: SYSTEM_ORG_ID
+        });
+
+        if (!existingTemplate) {
+            await MeasurementTemplate.create({
+                ...templateData,
+                organizationId: SYSTEM_ORG_ID,
+                createdBy: userId
+            });
+            console.log(`Global template created: ${templateData.name}`);
+        }
+    }
+};
 
 /**
  * Create a new measurement template
@@ -35,7 +57,12 @@ export const getTemplates = async (
     options: PaginationOptions,
     query: any = {}
 ): Promise<{ templates: IMeasurementTemplate[]; total: number }> => {
-    const filter: any = { organizationId };
+    const filter: any = {
+        $or: [
+            { organizationId },
+            { organizationId: SYSTEM_ORG_ID }
+        ]
+    };
 
     if (query.search) {
         filter.name = { $regex: query.search, $options: 'i' };
@@ -59,7 +86,13 @@ export const getTemplateById = async (
     id: string,
     organizationId: string
 ): Promise<IMeasurementTemplate> => {
-    const template = await MeasurementTemplate.findOne({ _id: id, organizationId });
+    const template = await MeasurementTemplate.findOne({
+        _id: id,
+        $or: [
+            { organizationId },
+            { organizationId: SYSTEM_ORG_ID }
+        ]
+    });
 
     if (!template) {
         throw new Error('Template not found');
@@ -208,6 +241,7 @@ export const deleteMeasurement = async (id: string, organizationId: string): Pro
 
 const measurementService = {
     // Templates
+    seedGlobalTemplates,
     createTemplate,
     getTemplates,
     getTemplateById,

@@ -18,6 +18,10 @@ const startServer = async () => {
         const planService = require('./services/plan.service').default;
         await planService.seedPlans();
 
+        // Seed global measurement templates
+        const measurementService = require('./services/measurement.service').default;
+        await measurementService.seedGlobalTemplates();
+
 
         // Start listening
         const server = app.listen(PORT, () => {
