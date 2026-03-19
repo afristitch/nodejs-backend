@@ -185,6 +185,7 @@ export interface IOrder {
     notes?: string;
     clothImageUrl?: string;
     clothSize?: string;
+    styleId?: string; // UUID reference to Style model
     organizationId: string; // UUID
     createdBy: string; // UUID
     createdAt: Date;
@@ -278,6 +279,31 @@ export interface INotification {
     data?: any;
     isRead: boolean;
     type: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+/**
+ * Style Gender
+ */
+export enum StyleGender {
+    MALE = 'male',
+    FEMALE = 'female',
+    UNISEX = 'unisex',
+}
+
+/**
+ * Style Interface
+ */
+export interface IStyle {
+    _id: string; // UUID
+    name: string;
+    description?: string;
+    imageUrl: string;
+    gender: StyleGender;
+    tags?: string[];
+    organizationId?: string; // UUID (optional for global styles)
+    createdBy: string; // UUID
     createdAt: Date;
     updatedAt: Date;
 }

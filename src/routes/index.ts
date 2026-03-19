@@ -13,6 +13,7 @@ import smsRoutes from './sms.routes';
 import revenuecatRoutes from './revenuecat.routes';
 import systemRoutes from './system.routes';
 import notificationRoutes from './notification.routes';
+import styleRoutes from './style.routes';
 
 
 const router = express.Router();
@@ -46,6 +47,7 @@ router.use('/sms', smsRoutes);
 router.use('/revenuecat', revenuecatRoutes);
 router.use('/system', systemRoutes);
 router.use('/notifications', notificationRoutes);
+router.use('/styles', styleRoutes);
 
 
 export default router;
