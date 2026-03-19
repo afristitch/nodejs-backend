@@ -71,6 +71,38 @@ This is **backend-only** (called by RevenueCat, not the app). No action needed i
 
 ---
 
+## 5. Measurement Template Icons
+
+**What changed:** Measurement templates now support an optional `iconUrl`. System-provided templates have been updated with default Icons8 URLs.
+
+- **New Field:** `iconUrl` (string, optional)
+- **Default Icons:**
+  - Male Full Body: `https://img.icons8.com/ios-filled/100/shirt.png`
+  - Female Full Body: `https://img.icons8.com/ios-filled/100/dress.png`
+
+**What to do:** Frontend can now use `template.iconUrl` to display an image for the template. If `iconUrl` is null, a fallback generic icon should be used.
+
+---
+
+## 6. Partial Measurements (Optional Fields)
+
+**What changed:** Measurements can now be saved even if some fields are empty. The `values` map now accepts empty strings (`""`) without validation errors.
+
+**Use Case:** This allows a tailor to start recording measurements and finish them later.
+
+**What to do:** The frontend can now send an empty string for any field in the `values` object.
+
+```json
+{
+  "values": {
+    "Neck": "15.5",
+    "Chest": "" 
+  }
+}
+```
+
+---
+
 ## 4. Firebase Notifications (Latest)
 
 ### Push & In-App Notifications

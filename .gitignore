@@ -45,3 +45,6 @@ tmp/
 .env*
 
 /secrets
+
+beta-invitation*
+missing-invites*

@@ -38,7 +38,7 @@ const createGoogleTester = async () => {
         const freePlan = await Plan.findOne({ name: 'free' });
 
         const subscriptionEndsAt = new Date();
-        subscriptionEndsAt.setDate(subscriptionEndsAt.getDate() + 14);
+        subscriptionEndsAt.setDate(subscriptionEndsAt.getDate() + 21);
 
         // Create organization
         console.log('Creating organization...');

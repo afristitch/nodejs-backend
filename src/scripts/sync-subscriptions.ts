@@ -36,7 +36,7 @@ const syncSubscriptions = async () => {
             if (org.subscriptionStatus === SubscriptionStatus.TRIALING || !org.subscriptionStatus) {
                 // For trials (or default), set to createdAt + 14 days
                 endsAt = new Date(createdAt);
-                endsAt.setDate(endsAt.getDate() + 14);
+                endsAt.setDate(endsAt.getDate() + 21);
 
                 if (!org.subscriptionStatus) {
                     org.subscriptionStatus = SubscriptionStatus.TRIALING;
@@ -49,7 +49,7 @@ const syncSubscriptions = async () => {
             } else {
                 // For expired or cancelled, set to createdAt + 14 days as historical record
                 endsAt = new Date(createdAt);
-                endsAt.setDate(endsAt.getDate() + 14);
+                endsAt.setDate(endsAt.getDate() + 21);
             }
 
             console.log(`📝 Org: ${org.name} (${org._id})`);
