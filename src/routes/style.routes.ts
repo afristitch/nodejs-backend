@@ -15,6 +15,10 @@ router
     .post(styleController.createStyle);
 
 router
+    .route('/me')
+    .get(styleController.getMyStyles);
+
+router
     .route('/:id')
     .get(styleController.getStyleById)
     .put(styleController.updateStyle)

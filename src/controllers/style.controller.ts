@@ -66,6 +66,34 @@ export const getStyles = async (req: AuthRequest, res: Response) => {
 };
 
 /**
+ * Handle fetching ONLY organization styles
+ */
+export const getMyStyles = async (req: AuthRequest, res: Response) => {
+    try {
+        const organizationId = req.organizationId!;
+        const options = parsePagination(req.query);
+
+        const filters = {
+            gender: req.query.gender as StyleGender,
+            search: req.query.search as string,
+            onlyOrg: true,
+        };
+
+        const result = await styleService.getStyles(organizationId, options, filters);
+
+        return res.status(200).json({
+            status: 'success',
+            ...result,
+        });
+    } catch (error: any) {
+        return res.status(400).json({
+            status: 'error',
+            message: error.message,
+        });
+    }
+};
+
+/**
  * Handle fetching a single style
  */
 export const getStyleById = async (req: AuthRequest, res: Response) => {
@@ -143,6 +171,7 @@ export const deleteStyle = async (req: AuthRequest, res: Response) => {
 const styleController = {
     createStyle,
     getStyles,
+    getMyStyles,
     getStyleById,
     updateStyle,
     deleteStyle,
