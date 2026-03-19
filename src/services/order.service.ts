@@ -17,6 +17,14 @@ export const createOrder = async (
     // Generate order number
     const orderNumber = await (Order as any).generateOrderNumber(organizationId);
 
+    // Validate style if provided
+    if (orderData.styleId) {
+        const style = await require('./style.service').default.getStyleById(orderData.styleId, organizationId);
+        if (!style) {
+            throw new Error('Valid style is required');
+        }
+    }
+
     const order = new Order({
         ...orderData,
         orderNumber,
@@ -91,6 +99,14 @@ export const updateOrder = async (
     organizationId: string,
     updateData: any
 ): Promise<IOrder> => {
+    // Validate style if provided
+    if (updateData.styleId) {
+        const style = await require('./style.service').default.getStyleById(updateData.styleId, organizationId);
+        if (!style) {
+            throw new Error('Valid style is required');
+        }
+    }
+
     const order = await Order.findOneAndUpdate(
         { _id: id, organizationId },
         { $set: updateData },
