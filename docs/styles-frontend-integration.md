@@ -31,7 +31,15 @@ Styles can be fetched with pagination and optional filtering by gender.
 }
 ```
 
-## 2. Creating/Updating Orders with a Style
+## 2. Fetching Organization-Specific Styles
+
+To fetch *only* styles belonging to your organization (excluding global ones), use the `/me` endpoint.
+
+**Endpoint:** `GET /api/v1/styles/me`
+
+**Response Structure:** Same as `GET /api/v1/styles`.
+
+## 3. Creating/Updating Orders with a Style
 
 When creating or updating an order, you can optionally include a `styleId`.
 

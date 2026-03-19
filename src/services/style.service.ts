@@ -22,15 +22,17 @@ export const createStyle = async (data: Partial<IStyle>): Promise<IStyle> => {
 export const getStyles = async (
     organizationId: string,
     options: PaginationOptions,
-    filters: { gender?: StyleGender; search?: string } = {}
+    filters: { gender?: StyleGender; search?: string; onlyOrg?: boolean } = {}
 ): Promise<PaginatedResponse<IStyle>> => {
     // Return styles that are either global (null) or belong to this organization
-    const query: FilterQuery<IStyle> = {
-        $or: [
-            { organizationId: organizationId },
-            { organizationId: null }
-        ]
-    };
+    const query: FilterQuery<IStyle> = filters.onlyOrg
+        ? { organizationId: organizationId }
+        : {
+            $or: [
+                { organizationId: organizationId },
+                { organizationId: null }
+            ]
+        };
 
     if (filters.gender) {
         query.gender = filters.gender;
