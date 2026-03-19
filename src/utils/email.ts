@@ -137,4 +137,47 @@ export const sendCredentialsEmail = async (
     console.error(`[Email] Error sending credentials email to ${email}:`, error);
   }
 };
+/**
+ * Send beta invitation email
+ */
+export const sendBetaInvitationEmail = async (
+  email: string,
+  name: string,
+  platform: 'android' | 'ios'
+): Promise<void> => {
+  try {
+    if (process.env.NODE_ENV === 'test') return;
 
+    console.log(`[Email] Sending beta invitation email to ${email} (${platform})...`);
+
+    // In local development, if no API key, just log it
+    if (!process.env.RESEND_API_KEY && process.env.NODE_ENV === 'development') {
+      console.log('--- Beta Invitation Email Simulation ---');
+      console.log(`To: ${email}`);
+      console.log(`Platform: ${platform}`);
+      console.log('----------------------------------------');
+      return;
+    }
+
+    const html = renderTemplate('beta-invitation', {
+      name,
+      isAndroid: platform === 'android',
+      isIos: platform === 'ios',
+    });
+
+    const { data, error: resendError } = await resend.emails.send({
+      from: fromEmail,
+      to: email,
+      subject: 'Welcome to the SewDigital Beta!',
+      html,
+    });
+
+    if (resendError) {
+      console.error(`[Email] Resend reported an error for ${email}:`, resendError);
+    } else {
+      console.log(`[Email] Beta invitation email sent successfully to ${email}. ID: ${data?.id}`);
+    }
+  } catch (error) {
+    console.error(`[Email] Error sending beta invitation email to ${email}:`, error);
+  }
+};
