@@ -17,6 +17,14 @@ export const createOrder = async (
     // Generate order number
     const orderNumber = await (Order as any).generateOrderNumber(organizationId);
 
+    // Validate style if provided
+    if (orderData.styleId) {
+        const style = await require('./style.service').default.getStyleById(orderData.styleId, organizationId);
+        if (!style) {
+            throw new Error('Valid style is required');
+        }
+    }
+
     const order = new Order({
         ...orderData,
         orderNumber,
@@ -53,7 +61,8 @@ export const getOrders = async (
 ): Promise<{ orders: IOrder[]; total: number }> => {
 
     const orders = await Order.find({ organizationId })
-        .populate('client', 'name phone email photoUrl');
+        .populate('client', 'name phone email photoUrl')
+        .populate('style');
 
     console.log("STEP 4:", orders.length);
 
@@ -71,10 +80,9 @@ export const getOrders = async (
  * Get order by ID
  */
 export const getOrderById = async (id: string, organizationId: string): Promise<IOrder> => {
-    const order = await Order.findOne({ _id: id, organizationId }).populate(
-        'client',
-        'name phone email photoUrl'
-    );
+    const order = await Order.findOne({ _id: id, organizationId })
+        .populate('client', 'name phone email photoUrl')
+        .populate('style');
 
     if (!order) {
         throw new Error('Order not found');
@@ -91,6 +99,14 @@ export const updateOrder = async (
     organizationId: string,
     updateData: any
 ): Promise<IOrder> => {
+    // Validate style if provided
+    if (updateData.styleId) {
+        const style = await require('./style.service').default.getStyleById(updateData.styleId, organizationId);
+        if (!style) {
+            throw new Error('Valid style is required');
+        }
+    }
+
     const order = await Order.findOneAndUpdate(
         { _id: id, organizationId },
         { $set: updateData },

@@ -69,6 +69,11 @@ const orderSchema = new Schema<IOrder>(
             trim: true,
             default: null,
         },
+        styleId: {
+            type: String,
+            ref: 'Style',
+            default: null,
+        },
         organizationId: {
             type: String,
             required: [true, 'Organization is required'],
@@ -100,6 +105,13 @@ orderSchema.virtual('client', {
     localField: 'clientId', // stored in DB
     foreignField: '_id',    // Client._id
     justOne: true,           // single object, not array
+});
+
+orderSchema.virtual('style', {
+    ref: 'Style',
+    localField: 'styleId',
+    foreignField: '_id',
+    justOne: true,
 });
 
 // Ensure virtuals are included in JSON responses
