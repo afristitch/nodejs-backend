@@ -13,7 +13,7 @@ const globalStyles = [
     {
         name: 'Slim Fit Two-Piece Suit',
         description: 'A modern, tailored two-piece suit perfect for weddings and formal events. Features a notched lapel and double vents.',
-        imageUrl: 'https://images.unsplash.com/photo-1594932224828-b4b05a832fe3?auto=format&fit=crop&q=80&w=800',
+        imageUrl: 'https://assets.digitalcontent.marksandspencer.app/image/upload/w_2560,q_auto,f_auto/DS_0cf9743e80883f19fd14e3713a8d6616_0',
         gender: StyleGender.MALE,
         tags: ['formal', 'wedding', 'suit', 'modern'],
         organizationId: null,
@@ -51,7 +51,7 @@ const globalStyles = [
     {
         name: 'Kente Wrap Dress',
         description: 'Stunning wrap dress made from authentic hand-woven Kente cloth. Vibrant colors and tribal patterns.',
-        imageUrl: 'https://images.unsplash.com/photo-1621184455862-c163cdb33e00?auto=format&fit=crop&q=80&w=800',
+        imageUrl: 'https://www.bellanaija.com/wp-content/uploads/2025/10/SaveClip.App_469399981_18473143918061945_6276870499141939980_n.jpg',
         gender: StyleGender.FEMALE,
         tags: ['traditional', 'kente', 'colorful'],
         organizationId: null,
@@ -60,7 +60,7 @@ const globalStyles = [
     {
         name: 'Peplum Top & Pencil Skirt',
         description: 'Chic corporate ensemble. The structured peplum top emphasizes the waist, paired with a matching knee-length skirt.',
-        imageUrl: 'https://images.unsplash.com/photo-1539008835064-0e399583bf45?auto=format&fit=crop&q=80&w=800',
+        imageUrl: 'https://i.pinimg.com/236x/4c/c3/47/4cc34722e54fe7fd69dbd70b3af6181c.jpg',
         gender: StyleGender.FEMALE,
         tags: ['corporate', 'chic', 'set'],
         organizationId: null,

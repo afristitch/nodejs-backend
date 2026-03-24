@@ -28,5 +28,12 @@ router.use(subscriptionMiddleware);
  */
 router.put('/me', profileController.updateMyProfile);
 
+/**
+ * @route   DELETE /api/v1/profile/me
+ * @desc    Delete current user's account
+ * @access  Private
+ */
+router.delete('/me', profileController.deleteMyAccount);
+
 
 export default router;

@@ -1,5 +1,14 @@
 import User from '../models/User';
-import { IUser, PaginationOptions } from '../types';
+import Organization from '../models/Organization';
+import Client from '../models/Client';
+import Order from '../models/Order';
+import Measurement from '../models/Measurement';
+import MeasurementTemplate from '../models/MeasurementTemplate';
+import Style from '../models/Style';
+import DeviceToken from '../models/DeviceToken';
+import Notification from '../models/Notification';
+import SubscriptionPayment from '../models/SubscriptionPayment';
+import { IUser, PaginationOptions, UserRole } from '../types';
 import { sendCredentialsEmail } from '../utils/email';
 
 /**
@@ -107,7 +116,7 @@ export const updateUser = async (
 };
 
 /**
- * Delete user
+ * Delete user (Admin deleting staff)
  * @param {string} id - User ID
  * @param {string} organizationId - Organization ID
  * @returns {Promise<boolean>} Success
@@ -122,12 +131,57 @@ export const deleteUser = async (id: string, organizationId: string): Promise<bo
     return true;
 };
 
+/**
+ * Delete account (User deleting themselves)
+ * Cascades if user is ORG_ADMIN
+ * @param {string} userId - User ID
+ * @returns {Promise<boolean>} Success
+ */
+export const deleteAccount = async (userId: string): Promise<boolean> => {
+    const user = await User.findById(userId);
+    if (!user) {
+        throw new Error('User not found');
+    }
+
+    const { organizationId, role } = user;
+
+    if (role === UserRole.ORG_ADMIN) {
+        // Find all users in the organization to delete their tokens/notifications
+        const orgUsers = await User.find({ organizationId });
+        const orgUserIds = orgUsers.map(u => u._id);
+
+        // Delete all data associated with the organization
+        await Promise.all([
+            Client.deleteMany({ organizationId }),
+            Order.deleteMany({ organizationId }),
+            Measurement.deleteMany({ organizationId }),
+            MeasurementTemplate.deleteMany({ organizationId }),
+            Style.deleteMany({ organizationId }),
+            SubscriptionPayment.deleteMany({ organizationId }),
+            Notification.deleteMany({ userId: { $in: orgUserIds } }),
+            DeviceToken.deleteMany({ userId: { $in: orgUserIds } }),
+            User.deleteMany({ organizationId }),
+            Organization.deleteOne({ _id: organizationId }),
+        ]);
+    } else {
+        // STAFF member - only delete their own data
+        await Promise.all([
+            Notification.deleteMany({ userId }),
+            DeviceToken.deleteMany({ userId }),
+            User.deleteOne({ _id: userId }),
+        ]);
+    }
+
+    return true;
+};
+
 const userService = {
     createUser,
     getUsers,
     getUserById,
     updateUser,
     deleteUser,
+    deleteAccount,
 };
 
 export default userService;
