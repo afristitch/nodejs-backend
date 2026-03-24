@@ -1,5 +1,6 @@
 import { Response, NextFunction } from "express";
 import profileService from "../services/profile.service";
+import userService from "../services/user.service";
 import { successResponse } from "../utils/response";
 import { AuthRequest, IUser } from "../types";
 import User from "../models/User";
@@ -58,6 +59,29 @@ export const updateMyProfile = async (
     delete userSafe.passwordResetExpires;
 
     return successResponse(res, userSafe, "Profile updated successfully");
+  } catch (error) {
+    return next(error);
+  }
+};
+
+
+/**
+ * DELETE /api/v1/profile/me
+ * Delete current user's account
+ */
+export const deleteMyAccount = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!req.user) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    await userService.deleteAccount(req.user._id);
+
+    return successResponse(res, null, "Account deleted successfully");
   } catch (error) {
     return next(error);
   }
