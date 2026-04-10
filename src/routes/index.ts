@@ -25,10 +25,22 @@ const router = express.Router();
 
 // Health check
 router.get('/health', (_req: Request, res: Response) => {
+    const memoryUsage = process.memoryUsage();
     res.json({
         success: true,
         message: 'Tailor API is running',
         timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        platform: process.platform,
+        metrics: {
+            memory: {
+                rss: `${Math.round(memoryUsage.rss / 1024 / 1024 * 100) / 100} MB`,
+                heapTotal: `${Math.round(memoryUsage.heapTotal / 1024 / 1024 * 100) / 100} MB`,
+                heapUsed: `${Math.round(memoryUsage.heapUsed / 1024 / 1024 * 100) / 100} MB`,
+                external: `${Math.round(memoryUsage.external / 1024 / 1024 * 100) / 100} MB`,
+            },
+            cpu: process.cpuUsage(),
+        }
     });
 });
 
