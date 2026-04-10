@@ -16,11 +16,20 @@ router.use(requireSuperAdmin);
  */
 router.get('/logs', systemController.getLogFiles);
 
+router.get('/logs/:filename', systemController.getLogFileContent);
+
 /**
- * @route   GET /api/v1/system/logs/:filename
- * @desc    Get specific log file content
+ * @route   GET /api/v1/system/health/settings
+ * @desc    Get platform monitoring settings
  * @access  Private (Admin only)
  */
-router.get('/logs/:filename', systemController.getLogFileContent);
+router.get('/health/settings', systemController.getHealthSettings);
+
+/**
+ * @route   PATCH /api/v1/system/health/settings
+ * @desc    Update platform monitoring settings
+ * @access  Private (Admin only)
+ */
+router.patch('/health/settings', systemController.updateHealthSettings);
 
 export default router;

@@ -96,7 +96,7 @@ export interface IUser {
     email: string;
     password: string;
     role: UserRole;
-    organizationId: string; // UUID
+    organizationId?: string; // UUID
     isEmailVerified: boolean;
     photoUrl?: string;
     passwordResetToken?: string;
@@ -305,5 +305,14 @@ export interface IStyle {
     organizationId?: string; // UUID (optional for global styles)
     createdBy: string; // UUID
     createdAt: Date;
+    updatedAt: Date;
+}
+
+/**
+ * System Settings Interface
+ */
+export interface ISystemSettings {
+    monitoringEnabled: boolean;
+    checkInterval: number; // in seconds
     updatedAt: Date;
 }

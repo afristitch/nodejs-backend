@@ -55,32 +55,41 @@ export const createOrder = async (
  * Get all orders in an organization
  */
 export const getOrders = async (
-    organizationId: string,
+    organizationId: string | undefined,
     options: PaginationOptions,
     filters: any = {}
 ): Promise<{ orders: IOrder[]; total: number }> => {
-
-    const orders = await Order.find({ organizationId })
+    const query: any = organizationId ? { organizationId } : {};
+    
+    // Maintain backward compatibility: Only paginate if explicitly requested
+    const shouldPaginate = !!(filters.page && filters.limit);
+    
+    let ordersQuery = Order.find(query)
         .populate('client', 'name phone email photoUrl')
-        .populate('style');
+        .populate('style')
+        .sort({ createdAt: -1 });
 
-    console.log("STEP 4:", orders.length);
+    if (shouldPaginate) {
+        ordersQuery = ordersQuery.skip(options.skip).limit(options.limit);
+    }
 
+    const [orders, total] = await Promise.all([
+        ordersQuery,
+        Order.countDocuments(query),
+    ]);
 
-
-    console.log("STEP 1 - FILTERS:", filters);
-    console.log("STEP 1 - OPTIONS:", options);
-
-    return { orders, total: orders.length };
-
+    return { orders, total };
 };
 
 
 /**
  * Get order by ID
  */
-export const getOrderById = async (id: string, organizationId: string): Promise<IOrder> => {
-    const order = await Order.findOne({ _id: id, organizationId })
+export const getOrderById = async (id: string, organizationId: string | undefined): Promise<IOrder> => {
+    const query: any = { _id: id };
+    if (organizationId) query.organizationId = organizationId;
+
+    const order = await Order.findOne(query)
         .populate('client', 'name phone email photoUrl')
         .populate('style');
 
@@ -107,8 +116,11 @@ export const updateOrder = async (
         }
     }
 
+    const query: any = { _id: id };
+    if (organizationId) query.organizationId = organizationId;
+
     const order = await Order.findOneAndUpdate(
-        { _id: id, organizationId },
+        query,
         { $set: updateData },
         { new: true, runValidators: true }
     );
@@ -128,8 +140,11 @@ export const updateOrderStatus = async (
     organizationId: string,
     status: string
 ): Promise<IOrder> => {
+    const query: any = { _id: id };
+    if (organizationId) query.organizationId = organizationId;
+
     const order = await Order.findOneAndUpdate(
-        { _id: id, organizationId },
+        query,
         { $set: { status } },
         { new: true }
     );
@@ -159,10 +174,13 @@ export const updateOrderStatus = async (
  */
 export const recordPayment = async (
     id: string,
-    organizationId: string,
+    organizationId: string | undefined,
     amount: number
 ): Promise<IOrder> => {
-    const order = await Order.findOne({ _id: id, organizationId });
+    const query: any = { _id: id };
+    if (organizationId) query.organizationId = organizationId;
+
+    const order = await Order.findOne(query);
 
     if (!order) {
         throw new Error('Order not found');
@@ -195,8 +213,11 @@ export const recordPayment = async (
 /**
  * Delete order
  */
-export const deleteOrder = async (id: string, organizationId: string): Promise<boolean> => {
-    const result = await Order.deleteOne({ _id: id, organizationId });
+export const deleteOrder = async (id: string, organizationId: string | undefined): Promise<boolean> => {
+    const query: any = { _id: id };
+    if (organizationId) query.organizationId = organizationId;
+
+    const result = await Order.deleteOne(query);
 
     if (result.deletedCount === 0) {
         throw new Error('Order not found');
@@ -209,10 +230,10 @@ export const deleteOrder = async (id: string, organizationId: string): Promise<b
  * Get financial summary for an organization
  */
 export const getFinancialSummary = async (
-    organizationId: string,
+    organizationId: string | undefined,
     query: any = {}
 ): Promise<any> => {
-    const match: any = { organizationId };
+    const match: any = organizationId ? { organizationId } : {};
 
     // Add date filtering if provided
     if (query.startDate || query.endDate) {
@@ -244,6 +265,43 @@ export const getFinancialSummary = async (
     );
 };
 
+/**
+ * Get monthly revenue stats for the last 6 months
+ */
+export const getMonthlyRevenueStats = async (
+    organizationId: string | undefined
+): Promise<any[]> => {
+    const match: any = organizationId ? { organizationId: organizationId } : {};
+    
+    // Get stats for the last 6 months
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    match.createdAt = { $gte: sixMonthsAgo };
+
+    const stats = await Order.aggregate([
+        { $match: match },
+        {
+            $group: {
+                _id: {
+                    month: { $month: '$createdAt' },
+                    year: { $year: '$createdAt' },
+                },
+                revenue: { $sum: '$amount' },
+            },
+        },
+        { $sort: { '_id.year': 1, '_id.month': 1 } },
+    ]);
+
+    // Format for frontend (e.g., { name: 'Jan', revenue: 4000 })
+    return stats.map((item) => {
+        const date = new Date(item._id.year, item._id.month - 1);
+        return {
+            name: date.toLocaleString('default', { month: 'short' }),
+            revenue: item.revenue,
+        };
+    });
+};
+
 const orderService = {
     createOrder,
     getOrders,
@@ -253,6 +311,7 @@ const orderService = {
     recordPayment,
     deleteOrder,
     getFinancialSummary,
+    getMonthlyRevenueStats,
 };
 
 export default orderService;

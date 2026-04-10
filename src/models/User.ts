@@ -41,7 +41,12 @@ const userSchema = new Schema<IUser>(
         },
         organizationId: {
             type: String,
-            required: [true, 'Organization is required'],
+            required: [
+                function (this: any) {
+                    return this.role !== UserRole.SUPER_ADMIN;
+                },
+                'Organization is required',
+            ],
         },
         isEmailVerified: {
             type: Boolean,
@@ -97,7 +102,7 @@ userSchema.methods.comparePassword = async function (
 
 // Instance method to check if user is admin
 userSchema.methods.isAdmin = function (): boolean {
-    return this.role === UserRole.ORG_ADMIN;
+    return this.role === UserRole.ORG_ADMIN || this.role === UserRole.SUPER_ADMIN;
 };
 
 // Instance method to convert user to JSON (remove sensitive data)

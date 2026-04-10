@@ -3,7 +3,7 @@ import { body } from 'express-validator';
 import * as userController from '../controllers/user.controller';
 import authMiddleware from '../middlewares/auth.middleware';
 import { organizationMiddleware } from '../middlewares/organization.middleware';
-import { requireAdmin } from '../middlewares/role.middleware';
+import { requireAdmin, requireSuperAdmin } from '../middlewares/role.middleware';
 import validate from '../middlewares/validate.middleware';
 import subscriptionMiddleware from '../middlewares/subscription.middleware';
 
@@ -69,5 +69,15 @@ router.put(
  * @access  Private (ORG_ADMIN)
  */
 router.delete('/:id', requireAdmin, userController.deleteUser);
+
+/**
+ * Update user by ID (SUPER_ADMIN only)
+ */
+router.put('/:id/admin', requireSuperAdmin, userController.adminUpdateUser);
+
+/**
+ * Delete user by ID (SUPER_ADMIN only)
+ */
+router.delete('/:id/admin', requireSuperAdmin, userController.adminDeleteUser);
 
 export default router;
