@@ -22,7 +22,7 @@ import { sendCredentialsEmail } from '../utils/email';
  * @param {any} userData - User data
  * @returns {Promise<IUser>} Created user
  */
-export const createUser = async (organizationId: string, userData: any): Promise<IUser> => {
+export const createUser = async (organizationId: string | undefined, userData: any): Promise<IUser> => {
     const existingUser = await User.findOne({ email: userData.email });
     if (existingUser) {
         throw new Error('Email already registered');
@@ -50,11 +50,22 @@ export const createUser = async (organizationId: string, userData: any): Promise
  * @returns {Promise<{ users: IUser[], total: number }>} Users and total count
  */
 export const getUsers = async (
-    organizationId: string,
+    globalOrganizationId: string | undefined,
     options: PaginationOptions,
-    search: string = ''
+    search: string = '',
+    filterOrganizationId: string = '',
+    role: string = '',
+    isPaginated: boolean = false
 ): Promise<{ users: IUser[]; total: number }> => {
-    const query: any = { organizationId };
+    const query: any = globalOrganizationId ? { organizationId: globalOrganizationId } : {};
+
+    if (filterOrganizationId && !globalOrganizationId) {
+        query.organizationId = filterOrganizationId;
+    }
+
+    if (role) {
+        query.role = { $regex: `^${role}$`, $options: 'i' };
+    }
 
     if (search) {
         query.$or = [
@@ -63,11 +74,14 @@ export const getUsers = async (
         ];
     }
 
+    let usersQuery = User.find(query).sort({ createdAt: -1 });
+
+    if (isPaginated) {
+        usersQuery = usersQuery.skip(options.skip).limit(options.limit);
+    }
+
     const [users, total] = await Promise.all([
-        User.find(query)
-            .sort({ createdAt: -1 })
-            .skip(options.skip)
-            .limit(options.limit),
+        usersQuery,
         User.countDocuments(query),
     ]);
 
@@ -80,8 +94,11 @@ export const getUsers = async (
  * @param {string} organizationId - Organization ID
  * @returns {Promise<IUser>} User
  */
-export const getUserById = async (id: string, organizationId: string): Promise<IUser> => {
-    const user = await User.findOne({ _id: id, organizationId });
+export const getUserById = async (id: string, organizationId: string | undefined): Promise<IUser> => {
+    const query: any = { _id: id };
+    if (organizationId) query.organizationId = organizationId;
+    
+    const user = await User.findOne(query);
 
     if (!user) {
         throw new Error('User not found');
@@ -99,11 +116,14 @@ export const getUserById = async (id: string, organizationId: string): Promise<I
  */
 export const updateUser = async (
     id: string,
-    organizationId: string,
+    organizationId: string | undefined,
     updateData: any
 ): Promise<IUser> => {
+    const query: any = { _id: id };
+    if (organizationId) query.organizationId = organizationId;
+
     const user = await User.findOneAndUpdate(
-        { _id: id, organizationId },
+        query,
         { $set: updateData },
         { new: true, runValidators: true }
     );
@@ -121,8 +141,11 @@ export const updateUser = async (
  * @param {string} organizationId - Organization ID
  * @returns {Promise<boolean>} Success
  */
-export const deleteUser = async (id: string, organizationId: string): Promise<boolean> => {
-    const result = await User.deleteOne({ _id: id, organizationId });
+export const deleteUser = async (id: string, organizationId: string | undefined): Promise<boolean> => {
+    const query: any = { _id: id };
+    if (organizationId) query.organizationId = organizationId;
+
+    const result = await User.deleteOne(query);
 
     if (result.deletedCount === 0) {
         throw new Error('User not found');

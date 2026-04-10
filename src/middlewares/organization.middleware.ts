@@ -1,5 +1,5 @@
 import { Response, NextFunction } from 'express';
-import { AuthRequest } from '../types';
+import { AuthRequest, UserRole } from '../types';
 
 /**
  * Organization Middleware
@@ -13,7 +13,7 @@ export const organizationMiddleware = (req: AuthRequest, res: Response, next: Ne
     }
 
     // For routes with :orgId param (if added in future)
-    if (req.params.orgId && req.params.orgId !== req.organizationId) {
+    if (req.params.orgId && req.params.orgId !== req.organizationId && req.user?.role !== UserRole.SUPER_ADMIN) {
         return res.status(403).json({
             success: false,
             message: 'Access denied. Organization mismatch.',

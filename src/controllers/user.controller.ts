@@ -37,11 +37,17 @@ export const getUsers = async (req: AuthRequest, res: Response, next: NextFuncti
         const organizationId = req.organizationId as string;
         const pagination = parsePagination(req.query as any);
         const search = req.query.search as string || '';
+        const filterOrganizationId = req.query.organizationId as string || '';
+        const role = req.query.status as string || '';
+        const isPaginated = !!(req.query.page || req.query.limit);
 
         const { users, total } = await userService.getUsers(
             organizationId,
             pagination,
-            search
+            search,
+            filterOrganizationId,
+            role,
+            isPaginated
         );
 
         const response = paginatedResponse(users, total, pagination.page, pagination.limit);
@@ -105,6 +111,47 @@ export const deleteUser = async (req: AuthRequest, res: Response, next: NextFunc
         const organizationId = req.organizationId as string;
         const id = req.params.id as string;
         await userService.deleteUser(id, organizationId);
+
+        successResponse(res, null, 'User deleted successfully');
+    } catch (error: any) {
+        if (error.message === 'User not found') {
+            errorResponse(res, 'User not found', 404);
+            return;
+        }
+        next(error);
+    }
+};
+/**
+ * Update user by ID (SUPER_ADMIN only)
+ * PUT /api/v1/users/:id/admin
+ */
+export const adminUpdateUser = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+        const id = req.params.id as string;
+        const user = await userService.updateUser(
+            id,
+            undefined,
+            req.body
+        );
+
+        successResponse(res, user, 'User updated successfully');
+    } catch (error: any) {
+        if (error.message === 'User not found') {
+            errorResponse(res, 'User not found', 404);
+            return;
+        }
+        next(error);
+    }
+};
+
+/**
+ * Delete user by ID (SUPER_ADMIN only)
+ * DELETE /api/v1/users/:id/admin
+ */
+export const adminDeleteUser = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+        const id = req.params.id as string;
+        await userService.deleteUser(id, undefined);
 
         successResponse(res, null, 'User deleted successfully');
     } catch (error: any) {

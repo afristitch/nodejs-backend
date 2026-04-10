@@ -12,7 +12,8 @@
     "script:sync-subscriptions": "ts-node src/scripts/sync-subscriptions.ts",
     "script:create-apple-tester": "ts-node src/scripts/create-apple-tester.ts",
     "script:create-google-tester": "ts-node src/scripts/create-google-tester.ts",
-    "script:send-beta-invitation": "ts-node src/scripts/send-beta-invitation.ts"
+    "script:send-beta-invitation": "ts-node src/scripts/send-beta-invitation.ts",
+    "script:create-superadmin": "ts-node src/scripts/create-superadmin.ts"
   },
   "keywords": [
     "tailor",

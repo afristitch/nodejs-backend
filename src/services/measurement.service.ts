@@ -64,12 +64,13 @@ export const getTemplates = async (
     options: PaginationOptions,
     query: any = {}
 ): Promise<{ templates: IMeasurementTemplate[]; total: number }> => {
-    const filter: any = {
-        $or: [
+    const filter: any = {};
+    if (organizationId) {
+        filter.$or = [
             { organizationId },
             { organizationId: SYSTEM_ORG_ID }
-        ]
-    };
+        ];
+    }
 
     if (query.search) {
         filter.name = { $regex: query.search, $options: 'i' };
@@ -93,13 +94,14 @@ export const getTemplateById = async (
     id: string,
     organizationId: string
 ): Promise<IMeasurementTemplate> => {
-    const template = await MeasurementTemplate.findOne({
-        _id: id,
-        $or: [
+    const query: any = { _id: id };
+    if (organizationId) {
+        query.$or = [
             { organizationId },
             { organizationId: SYSTEM_ORG_ID }
-        ]
-    });
+        ];
+    }
+    const template = await MeasurementTemplate.findOne(query);
 
     if (!template) {
         throw new Error('Template not found');
@@ -116,8 +118,11 @@ export const updateTemplate = async (
     organizationId: string,
     updateData: any
 ): Promise<IMeasurementTemplate> => {
+    const query: any = { _id: id };
+    if (organizationId) query.organizationId = organizationId;
+
     const template = await MeasurementTemplate.findOneAndUpdate(
-        { _id: id, organizationId },
+        query,
         { $set: updateData },
         { new: true, runValidators: true }
     );
@@ -133,7 +138,10 @@ export const updateTemplate = async (
  * Delete template
  */
 export const deleteTemplate = async (id: string, organizationId: string): Promise<boolean> => {
-    const result = await MeasurementTemplate.deleteOne({ _id: id, organizationId });
+    const query: any = { _id: id };
+    if (organizationId) query.organizationId = organizationId;
+
+    const result = await MeasurementTemplate.deleteOne(query);
 
     if (result.deletedCount === 0) {
         throw new Error('Template not found');
@@ -169,14 +177,16 @@ export const getMeasurements = async (
     organizationId: string,
     options: PaginationOptions
 ): Promise<{ measurements: IMeasurement[]; total: number }> => {
+    const query: any = organizationId ? { organizationId } : {};
+    
     const [measurements, total] = await Promise.all([
-        Measurement.find({ organizationId })
+        Measurement.find(query)
             .sort({ createdAt: -1 })
             .skip(options.skip)
             .limit(options.limit)
             .populate('clientId', 'name phone')
             .populate('templateId', 'name'),
-        Measurement.countDocuments({ organizationId }),
+        Measurement.countDocuments(query),
     ]);
 
     return { measurements, total };

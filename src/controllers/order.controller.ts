@@ -2,7 +2,7 @@ import { Response, NextFunction } from 'express';
 import orderService from '../services/order.service';
 import { successResponse, errorResponse } from '../utils/response';
 import { paginatedResponse, parsePagination } from '../utils/pagination';
-import { AuthRequest } from '../types';
+import { AuthRequest, UserRole } from '../types';
 
 /**
  * Order Controller
@@ -182,13 +182,40 @@ export const deleteOrder = async (req: AuthRequest, res: Response, next: NextFun
  */
 export const getFinancialSummary = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        const organizationId = req.organizationId as string;
+        let organizationId = req.organizationId as string;
+
+        // If user is SUPER_ADMIN, they can override organizationId via query param
+        if (req.user?.role === UserRole.SUPER_ADMIN && req.query.organizationId) {
+            organizationId = req.query.organizationId as string;
+        }
+
         const summary = await orderService.getFinancialSummary(
             organizationId,
             req.query
         );
 
         successResponse(res, summary, 'Financial summary retrieved successfully');
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * Get monthly revenue stats
+ * GET /api/v1/orders/reports/revenue-chart
+ */
+export const getMonthlyRevenueStats = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+        let organizationId = req.organizationId as string;
+
+        // If user is SUPER_ADMIN, they can override organizationId via query param
+        if (req.user?.role === UserRole.SUPER_ADMIN && req.query.organizationId) {
+            organizationId = req.query.organizationId as string;
+        }
+
+        const stats = await orderService.getMonthlyRevenueStats(organizationId);
+
+        successResponse(res, stats, 'Revenue stats retrieved successfully');
     } catch (error) {
         next(error);
     }
