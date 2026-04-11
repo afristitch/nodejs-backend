@@ -167,6 +167,77 @@ class NotificationService {
             throw error;
         }
     }
+
+    /**
+     * Broadcast a notification to all registered devices
+     */
+    async broadcast(
+        notificationData: {
+            title: string;
+            message: string;
+            type: string;
+            data?: any;
+        }
+    ): Promise<void> {
+        try {
+            // 1. Fetch all active device tokens
+            const deviceTokens = await DeviceToken.find();
+
+            if (deviceTokens.length === 0) {
+                logger.info('No device tokens found in system, skipped broadcast');
+                return;
+            }
+
+            // 2. Fetch all unique users who have tokens (if we want to create in-app notifications too)
+            // For a mass broadcast, we might skip saving in-app notifications to all users to avoid DB bloat,
+            // or we could save them only for active users. 
+            // For now, let's just focus on push notifications as per the "broadcast" requirement.
+
+            // 3. Send push notifications to all devices
+            const iosTokens = deviceTokens.filter(dt => dt.platform === 'ios').map(dt => dt.token);
+            const androidTokens = deviceTokens.filter(dt => dt.platform === 'android').map(dt => dt.token);
+
+            logger.info('Broadcasting push notifications', { 
+                iosCount: iosTokens.length, 
+                androidCount: androidTokens.length 
+            });
+
+            // FCM data fields must be strings
+            const stringifiedData: Record<string, string> = {
+                type: notificationData.type,
+            };
+
+            if (notificationData.data) {
+                Object.entries(notificationData.data).forEach(([key, value]) => {
+                    stringifiedData[key] = String(value);
+                });
+            }
+
+            // Send to Android via FCM (multicast)
+            if (androidTokens.length > 0) {
+                // firebaseService handles chunking if necessary
+                await firebaseService.sendMulticastNotification(
+                    androidTokens,
+                    notificationData.title,
+                    notificationData.message,
+                    stringifiedData
+                );
+            }
+
+            // Send to iOS via APNS
+            if (iosTokens.length > 0) {
+                // apnsService handles tokens in parallel
+                await apnsService.sendMulticastNotification(
+                    iosTokens,
+                    notificationData.title,
+                    notificationData.message,
+                    notificationData.data || {}
+                );
+            }
+        } catch (error) {
+            logger.error('Error broadcasting notification', { error });
+        }
+    }
 }
 
 export default new NotificationService();

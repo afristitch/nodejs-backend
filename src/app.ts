@@ -7,6 +7,7 @@ import routes from './routes';
 import errorMiddleware from './middlewares/error.middleware';
 import { loggingMiddleware } from './middlewares/logging.middleware';
 import './config/firebase';
+import maintenanceMiddleware from './middlewares/maintenance.middleware';
 
 /**
  * Express Application Setup
@@ -64,6 +65,9 @@ const limiter = rateLimit({
 
 // Apply rate limiting to all routes
 app.use('/api/', limiter);
+
+// Maintenance Mode Middleware (Global)
+app.use(maintenanceMiddleware);
 
 // API Routes
 app.use('/api/v1', routes);

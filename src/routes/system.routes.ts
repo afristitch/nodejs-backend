@@ -5,9 +5,30 @@ import { requireSuperAdmin } from '../middlewares/role.middleware';
 
 const router = express.Router();
 
-// Apply auth and admin middleware to all system routes
+/**
+ * @route   GET /api/v1/system/maintenance
+ * @desc    Get maintenance status (Public)
+ * @access  Public
+ */
+router.get('/maintenance', systemController.getMaintenanceStatus);
+
+// Apply auth and admin middleware to remaining system routes
 router.use(authMiddleware);
 router.use(requireSuperAdmin);
+
+/**
+ * @route   PATCH /api/v1/system/maintenance
+ * @desc    Update maintenance status
+ * @access  Private (SuperAdmin only)
+ */
+router.patch('/maintenance', systemController.updateMaintenanceStatus);
+
+/**
+ * @route   PATCH /api/v1/system/versions
+ * @desc    Update app versions and notify users
+ * @access  Private (SuperAdmin only)
+ */
+router.patch('/versions', systemController.updateAppVersions);
 
 /**
  * @route   GET /api/v1/system/logs
