@@ -314,5 +314,12 @@ export interface IStyle {
 export interface ISystemSettings {
     monitoringEnabled: boolean;
     checkInterval: number; // in seconds
+    maintenanceMode: boolean;
+    maintenanceMessage?: string;
+    latestIosVersion?: string;
+    latestAndroidVersion?: string;
+    iosUpdateUrl?: string;
+    androidUpdateUrl?: string;
+    forceUpdate?: boolean;
     updatedAt: Date;
 }
