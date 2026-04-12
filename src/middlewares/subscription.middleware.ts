@@ -10,6 +10,11 @@ const subscriptionMiddleware = async (req: AuthRequest, res: Response, next: Nex
     try {
         const organizationId = req.organizationId;
 
+        // Super admins bypass subscription checks
+        if (req.user?.role === 'SUPER_ADMIN') {
+            return next();
+        }
+
         if (!organizationId) {
             return res.status(403).json({
                 success: false,

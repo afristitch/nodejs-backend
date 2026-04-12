@@ -28,11 +28,12 @@ export const createClient = async (
  * Get all clients in an organization
  */
 export const getClients = async (
-    organizationId: string,
+    organizationId: string | undefined,
     options: PaginationOptions,
     search: string = ''
 ): Promise<{ clients: IClient[]; total: number }> => {
-    const query: any = { organizationId, isDeleted: false };
+    const query: any = { isDeleted: false };
+    if (organizationId) query.organizationId = organizationId;
 
     if (search) {
         query.$or = [
@@ -56,8 +57,11 @@ export const getClients = async (
 /**
  * Get client by ID
  */
-export const getClientById = async (id: string, organizationId: string): Promise<IClient> => {
-    const client = await Client.findOne({ _id: id, organizationId, isDeleted: false });
+export const getClientById = async (id: string, organizationId: string | undefined): Promise<IClient> => {
+    const query: any = { _id: id, isDeleted: false };
+    if (organizationId) query.organizationId = organizationId;
+
+    const client = await Client.findOne(query);
 
     if (!client) {
         throw new Error('Client not found');
@@ -71,11 +75,14 @@ export const getClientById = async (id: string, organizationId: string): Promise
  */
 export const updateClient = async (
     id: string,
-    organizationId: string,
+    organizationId: string | undefined,
     updateData: any
 ): Promise<IClient> => {
+    const query: any = { _id: id, isDeleted: false };
+    if (organizationId) query.organizationId = organizationId;
+
     const client = await Client.findOneAndUpdate(
-        { _id: id, organizationId, isDeleted: false },
+        query,
         { $set: updateData },
         { new: true, runValidators: true }
     );
@@ -90,9 +97,12 @@ export const updateClient = async (
 /**
  * Delete client (soft delete)
  */
-export const deleteClient = async (id: string, organizationId: string): Promise<boolean> => {
+export const deleteClient = async (id: string, organizationId: string | undefined): Promise<boolean> => {
+    const query: any = { _id: id, isDeleted: false };
+    if (organizationId) query.organizationId = organizationId;
+
     const client = await Client.findOneAndUpdate(
-        { _id: id, organizationId, isDeleted: false },
+        query,
         { $set: { isDeleted: true } }
     );
 

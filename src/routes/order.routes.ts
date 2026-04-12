@@ -57,6 +57,7 @@ router.get('/', orderController.getOrders);
  * @access  Private (ORG_ADMIN)
  */
 router.get('/reports/financial', requireAdmin, orderController.getFinancialSummary);
+router.get('/reports/revenue-chart', requireAdmin, orderController.getMonthlyRevenueStats);
 
 /**
  * @route   GET /api/v1/orders/:id

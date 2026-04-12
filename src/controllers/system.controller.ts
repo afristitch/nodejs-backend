@@ -4,6 +4,8 @@ import path from 'path';
 import { AuthRequest } from '../types';
 import { successResponse, errorResponse } from '../utils/response';
 import logger from '../utils/logger';
+import systemService from '../services/system.service';
+import notificationService from '../services/notification.service';
 
 /**
  * System Controller
@@ -68,6 +70,155 @@ export const getLogFileContent = async (req: AuthRequest, res: Response, next: N
         stream.pipe(res);
     } catch (error) {
         logger.error('Error reading log file', { error });
+        return next(error);
+    }
+};
+
+/**
+ * Get platform monitoring settings
+ * GET /api/v1/system/health/settings
+ */
+export const getHealthSettings = async (_req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+        const settings = await systemService.getSettings();
+        return successResponse(res, settings, 'System settings retrieved successfully');
+    } catch (error) {
+        logger.error('Error fetching system settings', { error });
+        return next(error);
+    }
+};
+
+/**
+ * Update platform monitoring settings
+ * PATCH /api/v1/system/health/settings
+ */
+export const updateHealthSettings = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+        const { monitoringEnabled, checkInterval } = req.body;
+        
+        const updateData: any = {};
+        if (typeof monitoringEnabled === 'boolean') updateData.monitoringEnabled = monitoringEnabled;
+        if (typeof checkInterval === 'number') updateData.checkInterval = checkInterval;
+
+        const settings = await systemService.updateSettings(updateData);
+        
+        logger.info('System settings updated', { 
+            userId: req.user?._id, 
+            monitoringEnabled: settings.monitoringEnabled,
+            checkInterval: settings.checkInterval
+        });
+
+        return successResponse(res, settings, 'System settings updated successfully');
+    } catch (error) {
+        logger.error('Error updating system settings', { error });
+        return next(error);
+    }
+};
+
+/**
+ * Get maintenance status
+ * GET /api/v1/system/maintenance
+ */
+export const getMaintenanceStatus = async (_req: any, res: Response, next: NextFunction) => {
+    try {
+        const settings = await systemService.getSettings();
+        return successResponse(res, {
+            maintenanceMode: settings.maintenanceMode,
+            maintenanceMessage: settings.maintenanceMessage,
+            latestIosVersion: settings.latestIosVersion,
+            latestAndroidVersion: settings.latestAndroidVersion,
+            iosUpdateUrl: settings.iosUpdateUrl,
+            androidUpdateUrl: settings.androidUpdateUrl,
+            forceUpdate: settings.forceUpdate
+        }, 'System configuration retrieved successfully');
+    } catch (error) {
+        logger.error('Error fetching maintenance status', { error });
+        return next(error);
+    }
+};
+
+/**
+ * Update maintenance status
+ * PATCH /api/v1/system/maintenance
+ */
+export const updateMaintenanceStatus = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+        const { maintenanceMode, maintenanceMessage } = req.body;
+        
+        const updateData: any = {};
+        if (typeof maintenanceMode === 'boolean') updateData.maintenanceMode = maintenanceMode;
+        if (maintenanceMessage) updateData.maintenanceMessage = maintenanceMessage;
+
+        const settings = await systemService.updateSettings(updateData);
+        
+        logger.info('Maintenance status updated', { 
+            userId: req.user?._id, 
+            maintenanceMode: settings.maintenanceMode,
+            maintenanceMessage: settings.maintenanceMessage
+        });
+
+        return successResponse(res, {
+            maintenanceMode: settings.maintenanceMode,
+            maintenanceMessage: settings.maintenanceMessage
+        }, 'Maintenance status updated successfully');
+    } catch (error) {
+        logger.error('Error updating maintenance status', { error });
+        return next(error);
+    }
+};
+
+/**
+ * Update app versions and notify users
+ * PATCH /api/v1/system/versions
+ */
+export const updateAppVersions = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+        const { 
+            latestIosVersion, 
+            latestAndroidVersion, 
+            iosUpdateUrl, 
+            androidUpdateUrl, 
+            forceUpdate,
+            notifyUsers = true
+        } = req.body;
+        
+        const updateData: any = {};
+        if (latestIosVersion) updateData.latestIosVersion = latestIosVersion;
+        if (latestAndroidVersion) updateData.latestAndroidVersion = latestAndroidVersion;
+        if (iosUpdateUrl) updateData.iosUpdateUrl = iosUpdateUrl;
+        if (androidUpdateUrl) updateData.androidUpdateUrl = androidUpdateUrl;
+        if (typeof forceUpdate === 'boolean') updateData.forceUpdate = forceUpdate;
+
+        const settings = await systemService.updateSettings(updateData);
+        
+        logger.info('App versions updated', { 
+            userId: req.user?._id, 
+            latestIosVersion: settings.latestIosVersion,
+            latestAndroidVersion: settings.latestAndroidVersion,
+            forceUpdate: settings.forceUpdate
+        });
+
+        // Trigger push notification if requested
+        if (notifyUsers) {
+            const updateMessage = forceUpdate 
+                ? 'A critical update is available. Please update to the latest version to continue using the app.'
+                : 'A new version of SewDigital is available with new features and improvements!';
+
+            notificationService.broadcast({
+                title: 'New Update Available! 🚀',
+                message: updateMessage,
+                type: 'APP_UPDATE',
+                data: {
+                    latestIosVersion: settings.latestIosVersion,
+                    latestAndroidVersion: settings.latestAndroidVersion,
+                    forceUpdate: String(settings.forceUpdate)
+                }
+            }).catch(err => logger.error('Error in broadcast notification after version update', { err }));
+        }
+
+        return successResponse(res, settings, 'App versions updated successfully');
+    } catch (error) {
+        logger.error('Error updating app versions', { error });
         return next(error);
     }
 };

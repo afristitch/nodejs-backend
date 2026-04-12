@@ -3,7 +3,7 @@ import { body } from 'express-validator';
 import * as organizationController from '../controllers/organization.controller';
 import authMiddleware from '../middlewares/auth.middleware';
 import { organizationMiddleware } from '../middlewares/organization.middleware';
-import { requireAdmin } from '../middlewares/role.middleware';
+import { requireAdmin, requireSuperAdmin } from '../middlewares/role.middleware';
 import validate from '../middlewares/validate.middleware';
 import subscriptionMiddleware from '../middlewares/subscription.middleware';
 
@@ -11,6 +11,15 @@ const router = express.Router();
 
 // Apply auth and organization middleware to all routes
 router.use(authMiddleware);
+
+/**
+ * @route   GET /api/v1/organization/all
+ * @desc    Get all organizations (SUPER_ADMIN only)
+ * @access  Private (SUPER_ADMIN)
+ */
+router.get('/all', requireSuperAdmin, organizationController.getAllOrganizations);
+
+// Routes below need organization isolation (for staff/admin)
 router.use(organizationMiddleware);
 
 router.get('/', organizationController.getOrganization);
@@ -40,5 +49,9 @@ router.put(
     ],
     organizationController.updateOrganization
 );
+
+router.get('/:id', requireSuperAdmin, organizationController.getAdminOrganizationById);
+router.put('/:id', requireSuperAdmin, organizationController.adminUpdateOrganization);
+router.delete('/:id', requireSuperAdmin, organizationController.deleteAdminOrganization);
 
 export default router;

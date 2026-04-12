@@ -7,6 +7,7 @@ import routes from './routes';
 import errorMiddleware from './middlewares/error.middleware';
 import { loggingMiddleware } from './middlewares/logging.middleware';
 import './config/firebase';
+import maintenanceMiddleware from './middlewares/maintenance.middleware';
 
 /**
  * Express Application Setup
@@ -28,7 +29,6 @@ const allowedOrigins = [
     'http://localhost:3000',
     'http://localhost:3001',
     'http://localhost:5173',
-    'https://sewdigital.app',
     'https://monitoring.sewdigital.app',
 ].filter(Boolean) as string[];
 
@@ -38,9 +38,7 @@ app.use(
             // Allow requests with no origin (like mobile apps or curl requests)
             if (!origin) return callback(null, true);
             
-            const isSewDigitalSubdomain = /^https?:\/\/(.+\.)?sewdigital\.app$/.test(origin);
-            
-            if (allowedOrigins.includes(origin) || allowedOrigins.includes('*') || isSewDigitalSubdomain) {
+            if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
                 callback(null, true);
             } else {
                 // If NODE_ENV is development, be more permissive
@@ -67,6 +65,9 @@ const limiter = rateLimit({
 
 // Apply rate limiting to all routes
 app.use('/api/', limiter);
+
+// Maintenance Mode Middleware (Global)
+app.use(maintenanceMiddleware);
 
 // API Routes
 app.use('/api/v1', routes);

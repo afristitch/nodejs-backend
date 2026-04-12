@@ -10,7 +10,7 @@ import { AuthRequest, UserRole } from '../types';
  * Require ORG_ADMIN role
  */
 export const requireAdmin = (req: AuthRequest, res: Response, next: NextFunction): void | Response => {
-    if (!req.user || req.user.role !== UserRole.ORG_ADMIN) {
+    if (!req.user || (req.user.role !== UserRole.ORG_ADMIN && req.user.role !== UserRole.SUPER_ADMIN)) {
         return res.status(403).json({
             success: false,
             message: 'Access denied. Admin privileges required.',

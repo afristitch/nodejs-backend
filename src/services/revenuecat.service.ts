@@ -67,7 +67,7 @@ export const handleWebhook = async (body: RevenueCatWebhookBody): Promise<void> 
 
     // Resolve organizationId. RevenueCat sends app_user_id which we set as the local User ID.
     // Subscriptions however are linked to Organizations in our system.
-    let organizationId: string | null = null;
+    let organizationId: string | null | undefined = null;
 
     // 1. Try if the ID is an organization ID directly
     const org = await Organization.findById(originalAppUserId || appUserId);
