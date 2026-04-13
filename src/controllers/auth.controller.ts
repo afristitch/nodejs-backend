@@ -45,7 +45,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
             return;
         }
         if (error.message === 'Email not verified') {
-            errorResponse(res, 'Email not verified. A new verification link has been sent to your email.', 401);
+            errorResponse(res, 'Email not verified. Please verify your account to continue. A new verification link has been sent.', 401);
             return;
         }
         next(error);
@@ -146,7 +146,7 @@ export const resendVerification = async (req: Request, res: Response, next: Next
         successResponse(
             res,
             null,
-            'If an account exists with that email and is not verified, a new verification link has been sent.'
+            'If an account exists with that email and is not verified, a new link to verify your account has been sent.'
         );
     } catch (error: any) {
         if (error.message === 'Email already verified') {
