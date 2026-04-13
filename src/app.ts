@@ -30,6 +30,7 @@ const allowedOrigins = [
     'http://localhost:3001',
     'http://localhost:5173',
     'https://sewdigital.app',
+    'https://www.sewdigital.app',
     'https://monitoring.sewdigital.app',
 ].filter(Boolean) as string[];
 
