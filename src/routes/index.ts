@@ -17,6 +17,7 @@ import notificationRoutes from './notification.routes';
 import styleRoutes from './style.routes';
 import exploreRoutes from './explore.routes';
 import quoteRoutes from './quote.routes';
+import groupRoutes from './group.routes';
 
 
 const router = express.Router();
@@ -82,6 +83,7 @@ router.use('/notifications', notificationRoutes);
 router.use('/styles', styleRoutes);
 router.use('/explore', exploreRoutes);
 router.use('/quotes', quoteRoutes);
+router.use('/groups', groupRoutes);
 
 
 export default router;
