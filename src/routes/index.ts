@@ -15,6 +15,8 @@ import revenuecatRoutes from './revenuecat.routes';
 import systemRoutes from './system.routes';
 import notificationRoutes from './notification.routes';
 import styleRoutes from './style.routes';
+import exploreRoutes from './explore.routes';
+import quoteRoutes from './quote.routes';
 
 
 const router = express.Router();
@@ -78,6 +80,8 @@ router.use('/revenuecat', revenuecatRoutes);
 router.use('/system', systemRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/styles', styleRoutes);
+router.use('/explore', exploreRoutes);
+router.use('/quotes', quoteRoutes);
 
 
 export default router;

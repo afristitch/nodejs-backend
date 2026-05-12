@@ -27,6 +27,7 @@ const organizationSchema = new Schema<IOrganization>(
     email: {
       type: String,
       required: [true, 'Organization email is required'],
+      unique: true,
       trim: true,
       lowercase: true,
       match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email address'],
@@ -73,6 +74,35 @@ const organizationSchema = new Schema<IOrganization>(
       type: Boolean,
       default: false,
     },
+    
+    // Discovery fields
+    isPublic: {
+      type: Boolean,
+      default: false,
+    },
+    bio: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    specialties: {
+      type: [String],
+      default: [],
+    },
+    portfolioUrls: {
+      type: [String],
+      default: [],
+    },
+    rating: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 5,
+    },
+    reviewCount: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,
@@ -81,7 +111,6 @@ const organizationSchema = new Schema<IOrganization>(
 );
 
 // Indexes
-organizationSchema.index({ email: 1 });
 organizationSchema.index({ createdBy: 1 });
 
 // Virtual for users belonging to this organization

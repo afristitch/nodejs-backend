@@ -22,6 +22,12 @@ export const registerOrganization = async (orgData: any, userData: any): Promise
         throw new Error('Email already registered');
     }
 
+    // Check if organization email already exists
+    const existingOrg = await Organization.findOne({ email: orgData.email });
+    if (existingOrg) {
+        throw new Error('Organization email already registered');
+    }
+
     // Create admin user first (without organization)
     const user = new User({
         ...userData,

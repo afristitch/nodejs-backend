@@ -48,7 +48,6 @@ const planSchema = new Schema<IPlan>(
 );
 
 // Indexes
-planSchema.index({ name: 1 });
 planSchema.index({ isActive: 1 });
 
 export default mongoose.model<IPlan>('Plan', planSchema);
