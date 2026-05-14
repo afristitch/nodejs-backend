@@ -15,7 +15,7 @@ import { IUser, AuthResponse } from '../types';
  * @param {any} userData - Admin user data
  * @returns {Promise<AuthResponse>} Organization, user, and tokens
  */
-export const registerOrganization = async (orgData: any, userData: any): Promise<AuthResponse> => {
+export const registerOrganization = async (orgData: any, userData: any, referralCode?: string): Promise<AuthResponse> => {
     // Check if user already exists
     const existingUser = await User.findOne({ email: userData.email });
     if (existingUser) {
@@ -49,6 +49,7 @@ export const registerOrganization = async (orgData: any, userData: any): Promise
         subscriptionPlan: 'free',
         planId: freePlan?._id || null,
         subscriptionEndsAt,
+        referralCode,
     });
 
 

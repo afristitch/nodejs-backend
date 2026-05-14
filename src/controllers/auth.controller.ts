@@ -13,9 +13,9 @@ import { successResponse, errorResponse } from '../utils/response';
  */
 export const register = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { organization, user } = req.body;
+        const { organization, user, referralCode } = req.body;
 
-        const result = await authService.registerOrganization(organization, user);
+        const result = await authService.registerOrganization(organization, user, referralCode);
 
         successResponse(
             res,

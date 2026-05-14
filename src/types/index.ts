@@ -99,6 +99,21 @@ export interface IOrganization {
     portfolioUrls?: string[];
     rating?: number;
     reviewCount?: number;
+    referralCode?: string;
+    paymentInstructions?: {
+        momo?: Array<{
+            network: string;
+            number: string;
+            name: string;
+        }>;
+        bank?: Array<{
+            bankName: string;
+            accountNumber: string;
+            accountName: string;
+            branch?: string;
+        }>;
+        generalNote?: string;
+    };
     
     createdAt: Date;
     updatedAt: Date;

@@ -103,6 +103,25 @@ const organizationSchema = new Schema<IOrganization>(
       type: Number,
       default: 0,
     },
+    referralCode: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    paymentInstructions: {
+      momo: [{
+        network: String,
+        number: String,
+        name: String,
+      }],
+      bank: [{
+        bankName: String,
+        accountNumber: String,
+        accountName: String,
+        branch: String,
+      }],
+      generalNote: String,
+    },
   },
   {
     timestamps: true,
