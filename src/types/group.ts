@@ -1,6 +1,3 @@
-import { Request } from 'express';
-import { IClient } from './index';
-
 /**
  * Group Interface
  */
