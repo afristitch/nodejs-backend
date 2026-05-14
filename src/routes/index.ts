@@ -18,6 +18,7 @@ import styleRoutes from './style.routes';
 import exploreRoutes from './explore.routes';
 import quoteRoutes from './quote.routes';
 import groupRoutes from './group.routes';
+import avatarRoutes from './avatar.routes';
 
 
 const router = express.Router();
@@ -84,6 +85,7 @@ router.use('/styles', styleRoutes);
 router.use('/explore', exploreRoutes);
 router.use('/quotes', quoteRoutes);
 router.use('/groups', groupRoutes);
+router.use('/avatars', avatarRoutes);
 
 
 export default router;
