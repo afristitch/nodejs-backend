@@ -122,6 +122,14 @@ const organizationSchema = new Schema<IOrganization>(
       }],
       generalNote: String,
     },
+    latitude: {
+      type: Number,
+      default: null,
+    },
+    longitude: {
+      type: Number,
+      default: null,
+    },
   },
   {
     timestamps: true,
