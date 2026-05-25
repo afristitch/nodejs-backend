@@ -15,7 +15,7 @@ export const getPublicTailors = async (
     specialty: string = '',
     location: string = ''
 ): Promise<{ tailors: IOrganization[]; total: number }> => {
-    const query: any = { isPublic: true };
+    const query: any = {};
     
     if (search) {
         query.name = { $regex: search, $options: 'i' };
@@ -44,10 +44,10 @@ export const getPublicTailors = async (
  * Get a public tailor by ID
  */
 export const getPublicTailorById = async (id: string): Promise<IOrganization> => {
-    const tailor = await Organization.findOne({ _id: id, isPublic: true });
+    const tailor = await Organization.findOne({ _id: id });
 
     if (!tailor) {
-        throw new Error('Studio not found or is not public');
+        throw new Error('Studio not found');
     }
 
     return tailor;

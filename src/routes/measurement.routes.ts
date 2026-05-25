@@ -5,14 +5,11 @@ import authMiddleware from '../middlewares/auth.middleware';
 import { organizationMiddleware } from '../middlewares/organization.middleware';
 import validate from '../middlewares/validate.middleware';
 
-import subscriptionMiddleware from '../middlewares/subscription.middleware';
-
 const router = express.Router();
 
-// Apply auth, organization and subscription middleware to all routes
+// Apply auth and organization middleware to all routes
 router.use(authMiddleware);
 router.use(organizationMiddleware);
-router.use(subscriptionMiddleware);
 
 
 // ==================== TEMPLATES ====================
