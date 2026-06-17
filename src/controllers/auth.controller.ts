@@ -44,6 +44,10 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
             errorResponse(res, 'Invalid email or password', 401);
             return;
         }
+        if (error.message === 'No organization found') {
+            errorResponse(res, 'This account is not associated with a tailor shop. Only tailors can log in.', 403);
+            return;
+        }
         if (error.message === 'Email not verified') {
             errorResponse(res, 'Email not verified. Please verify your account to continue. A new verification link has been sent.', 401);
             return;

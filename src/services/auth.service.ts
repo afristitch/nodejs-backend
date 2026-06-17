@@ -93,6 +93,10 @@ export const login = async (email: string, password: string): Promise<AuthRespon
         throw new Error('Invalid credentials');
     }
 
+    if (user.role !== 'SUPER_ADMIN' && !user.organizationId) {
+        throw new Error('No organization found');
+    }
+
     // Check password
     const isPasswordValid = await user.comparePassword(password);
 

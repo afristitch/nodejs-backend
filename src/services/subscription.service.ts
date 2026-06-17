@@ -146,7 +146,7 @@ export const getSubscriptionStatus = async (organizationId: string) => {
         plan: organization.subscriptionPlan,
         status: organization.subscriptionStatus,
         subscriptionEndsAt: organization.subscriptionEndsAt,
-        isPremium: organization.subscriptionStatus === SubscriptionStatus.ACTIVE,
+        isPremium: organization.subscriptionStatus === SubscriptionStatus.ACTIVE && organization.subscriptionPlan === 'premium',
         daysLeft
     };
 };
