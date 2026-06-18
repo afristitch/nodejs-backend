@@ -48,6 +48,16 @@ export enum SubscriptionStatus {
 }
 
 /**
+ * Quote Request Status
+ */
+export enum QuoteRequestStatus {
+    PENDING = 'pending',
+    QUOTED = 'quoted',
+    ORDERED = 'ordered',
+    REJECTED = 'rejected',
+}
+
+/**
  * Plan Interface
  */
 export interface IPlan {
@@ -81,6 +91,32 @@ export interface IOrganization {
     subscriptionEndsAt?: Date;
     revenuecatAppUserId?: string;
     trialExpiryNotificationSent?: boolean;
+    
+    // Discovery fields
+    isPublic?: boolean;
+    bio?: string;
+    specialties?: string[];
+    portfolioUrls?: string[];
+    rating?: number;
+    reviewCount?: number;
+    referralCode?: string;
+    paymentInstructions?: {
+        momo?: Array<{
+            network: string;
+            number: string;
+            name: string;
+        }>;
+        bank?: Array<{
+            bankName: string;
+            accountNumber: string;
+            accountName: string;
+            branch?: string;
+        }>;
+        generalNote?: string;
+    };
+    latitude?: number;
+    longitude?: number;
+    
     createdAt: Date;
     updatedAt: Date;
 }
@@ -188,6 +224,28 @@ export interface IOrder {
     styleId?: string; // UUID reference to Style model
     organizationId: string; // UUID
     createdBy: string; // UUID
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+/**
+ * Quote Request Interface
+ */
+export interface IQuoteRequest {
+    _id: string; // UUID
+    tailorId: string; // Organization ID
+    customerId?: string; // User ID (for logged-in users)
+    guestInfo?: {
+        name: string;
+        email: string;
+        phone: string;
+    };
+    details: string;
+    quoteAmount?: number;
+    quoteItems?: Array<{ description: string, price: number }>;
+    pdfUrl?: string;
+    status: QuoteRequestStatus;
+    notes?: string;
     createdAt: Date;
     updatedAt: Date;
 }

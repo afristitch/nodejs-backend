@@ -61,6 +61,12 @@ export const getOrders = async (
 ): Promise<{ orders: IOrder[]; total: number }> => {
     const query: any = organizationId ? { organizationId } : {};
     
+    // Apply filters
+    if (filters.clientId) query.clientId = filters.clientId;
+    if (filters.status) query.status = filters.status;
+    if (filters.paymentStatus) query.paymentStatus = filters.paymentStatus;
+    if (filters.orderNumber) query.orderNumber = { $regex: filters.orderNumber, $options: 'i' };
+    
     // Maintain backward compatibility: Only paginate if explicitly requested
     const shouldPaginate = !!(filters.page && filters.limit);
     

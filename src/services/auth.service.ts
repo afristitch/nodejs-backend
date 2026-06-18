@@ -15,11 +15,17 @@ import { IUser, AuthResponse } from '../types';
  * @param {any} userData - Admin user data
  * @returns {Promise<AuthResponse>} Organization, user, and tokens
  */
-export const registerOrganization = async (orgData: any, userData: any): Promise<AuthResponse> => {
+export const registerOrganization = async (orgData: any, userData: any, referralCode?: string): Promise<AuthResponse> => {
     // Check if user already exists
     const existingUser = await User.findOne({ email: userData.email });
     if (existingUser) {
         throw new Error('Email already registered');
+    }
+
+    // Check if organization email already exists
+    const existingOrg = await Organization.findOne({ email: orgData.email });
+    if (existingOrg) {
+        throw new Error('Organization email already registered');
     }
 
     // Create admin user first (without organization)
@@ -33,16 +39,13 @@ export const registerOrganization = async (orgData: any, userData: any): Promise
     const planService = require('./plan.service').default;
     const freePlan = await planService.getPlanByName('free');
 
-    const subscriptionEndsAt = new Date();
-    subscriptionEndsAt.setDate(subscriptionEndsAt.getDate() + 21);
-
     const organization = new Organization({
         ...orgData,
         createdBy: user._id,
-        subscriptionStatus: 'trialing',
+        subscriptionStatus: 'active',
         subscriptionPlan: 'free',
         planId: freePlan?._id || null,
-        subscriptionEndsAt,
+        referralCode,
     });
 
 
@@ -84,6 +87,10 @@ export const login = async (email: string, password: string): Promise<AuthRespon
 
     if (!user) {
         throw new Error('Invalid credentials');
+    }
+
+    if (user.role !== 'SUPER_ADMIN' && !user.organizationId) {
+        throw new Error('No organization found');
     }
 
     // Check password

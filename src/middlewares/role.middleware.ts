@@ -2,47 +2,30 @@ import { Response, NextFunction } from 'express';
 import { AuthRequest, UserRole } from '../types';
 
 /**
- * Role Middleware
- * Restricts access based on user role
+ * Middleware to restrict access to specific roles
  */
-
-/**
- * Require ORG_ADMIN role
- */
-export const requireAdmin = (req: AuthRequest, res: Response, next: NextFunction): void | Response => {
-    if (!req.user || (req.user.role !== UserRole.ORG_ADMIN && req.user.role !== UserRole.SUPER_ADMIN)) {
-        return res.status(403).json({
-            success: false,
-            message: 'Access denied. Admin privileges required.',
-        });
+export const authorize = (...roles: UserRole[]) => {
+  return (req: AuthRequest, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return res.status(403).json({
+        success: false,
+        message: 'Authentication required',
+      });
     }
-    next();
-};
 
-/**
- * Require SUPER_ADMIN role
- */
-export const requireSuperAdmin = (req: AuthRequest, res: Response, next: NextFunction): void | Response => {
-    if (!req.user || req.user.role !== UserRole.SUPER_ADMIN) {
-        return res.status(403).json({
-            success: false,
-            message: 'Access denied. Super Admin privileges required.',
-        });
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: `User role '${req.user.role}' is not authorized to access this resource`,
+      });
     }
-    next();
+
+    return next();
+  };
 };
 
 /**
- * Require specific role(s)
+ * Legacy/Shortcut middlewares for backward compatibility
  */
-export const requireRole = (roles: UserRole[]) => {
-    return (req: AuthRequest, res: Response, next: NextFunction): void | Response => {
-        if (!req.user || !roles.includes(req.user.role)) {
-            return res.status(403).json({
-                success: false,
-                message: `Access denied. Requires one of these roles: ${roles.join(', ')}`,
-            });
-        }
-        next();
-    };
-};
+export const requireAdmin = authorize(UserRole.ORG_ADMIN, UserRole.SUPER_ADMIN);
+export const requireSuperAdmin = authorize(UserRole.SUPER_ADMIN);

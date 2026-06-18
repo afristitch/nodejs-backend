@@ -9,9 +9,19 @@ export const getMyProfile = async (user: IUser) => {
   const organizationId = user.organizationId;
 
   // 1️⃣ Get organization
-  const organization = await Organization.findById(organizationId);
+  let organization = null;
+  if (organizationId) {
+    organization = await Organization.findById(organizationId);
+  }
+
   if (!organization) {
-    throw new Error("Organization not found");
+    return {
+      user,
+      organization: null,
+      summary: { totalOrders: 0, totalRevenue: 0 },
+      weekly: { orders: [], totalRevenue: 0 },
+      recentClients: [],
+    };
   }
 
   // 2️⃣ Total summary

@@ -13,9 +13,9 @@ import { successResponse, errorResponse } from '../utils/response';
  */
 export const register = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { organization, user } = req.body;
+        const { organization, user, referralCode } = req.body;
 
-        const result = await authService.registerOrganization(organization, user);
+        const result = await authService.registerOrganization(organization, user, referralCode);
 
         successResponse(
             res,
@@ -42,6 +42,10 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     } catch (error: any) {
         if (error.message === 'Invalid credentials') {
             errorResponse(res, 'Invalid email or password', 401);
+            return;
+        }
+        if (error.message === 'No organization found') {
+            errorResponse(res, 'This account is not associated with a tailor shop. Only tailors can log in.', 403);
             return;
         }
         if (error.message === 'Email not verified') {
