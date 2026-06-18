@@ -39,16 +39,12 @@ export const registerOrganization = async (orgData: any, userData: any, referral
     const planService = require('./plan.service').default;
     const freePlan = await planService.getPlanByName('free');
 
-    const subscriptionEndsAt = new Date();
-    subscriptionEndsAt.setDate(subscriptionEndsAt.getDate() + 21);
-
     const organization = new Organization({
         ...orgData,
         createdBy: user._id,
-        subscriptionStatus: 'trialing',
+        subscriptionStatus: 'active',
         subscriptionPlan: 'free',
         planId: freePlan?._id || null,
-        subscriptionEndsAt,
         referralCode,
     });
 

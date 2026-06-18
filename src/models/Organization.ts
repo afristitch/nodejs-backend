@@ -59,7 +59,7 @@ const organizationSchema = new Schema<IOrganization>(
     subscriptionStatus: {
       type: String,
       enum: Object.values(SubscriptionStatus),
-      default: SubscriptionStatus.TRIALING,
+      default: SubscriptionStatus.ACTIVE,
     } as any,
 
     subscriptionEndsAt: {
