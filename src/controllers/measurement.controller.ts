@@ -2,7 +2,7 @@ import { Response, NextFunction } from 'express';
 import measurementService from '../services/measurement.service';
 import { successResponse, errorResponse } from '../utils/response';
 import { paginatedResponse, parsePagination } from '../utils/pagination';
-import { AuthRequest } from '../types';
+import { AuthRequest, UserRole } from '../types';
 
 /**
  * Measurement Controller
@@ -156,7 +156,10 @@ export const createMeasurement = async (req: AuthRequest, res: Response, next: N
  */
 export const getMeasurements = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        const organizationId = req.organizationId as string;
+        let organizationId = req.organizationId as string;
+        if (req.user?.role === UserRole.SUPER_ADMIN && req.query.organizationId) {
+            organizationId = req.query.organizationId as string;
+        }
         const pagination = parsePagination(req.query as any);
 
         const { measurements, total } = await measurementService.getMeasurements(
