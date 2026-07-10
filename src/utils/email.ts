@@ -161,8 +161,8 @@ export const sendBetaInvitationEmail = async (
 
     const html = renderTemplate('beta-invitation', {
       name,
-      isAndroid: platform === 'android',
-      isIos: platform === 'ios',
+      isAndroid: true,
+      isIos: true,
     });
 
     const { data, error: resendError } = await resend.emails.send({
@@ -179,5 +179,44 @@ export const sendBetaInvitationEmail = async (
     }
   } catch (error) {
     console.error(`[Email] Error sending beta invitation email to ${email}:`, error);
+  }
+};
+
+/**
+ * Send 0.3.0 update email
+ */
+export const sendUpdateEmail = async (
+  email: string,
+  name: string
+): Promise<void> => {
+  try {
+    if (process.env.NODE_ENV === 'test') return;
+
+    console.log(`[Email] Sending update email to ${email}...`);
+
+    if (!process.env.RESEND_API_KEY && process.env.NODE_ENV === 'development') {
+      console.log('--- Update Email Simulation ---');
+      console.log(`To: ${email}`);
+      console.log(`Name: ${name}`);
+      console.log('-------------------------------');
+      return;
+    }
+
+    const html = renderTemplate('update-0-3-0', { name });
+
+    const { data, error: resendError } = await resend.emails.send({
+      from: fromEmail,
+      to: email,
+      subject: "SewDigital 0.3.0 is Here! New Features, Free Tier & More",
+      html,
+    });
+
+    if (resendError) {
+      console.error(`[Email] Resend reported an error for ${email}:`, resendError);
+    } else {
+      console.log(`[Email] Update email sent successfully to ${email}. ID: ${data?.id}`);
+    }
+  } catch (error) {
+    console.error(`[Email] Error sending update email to ${email}:`, error);
   }
 };

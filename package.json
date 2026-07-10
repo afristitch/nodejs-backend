@@ -13,6 +13,7 @@
     "script:create-apple-tester": "ts-node src/scripts/create-apple-tester.ts",
     "script:create-google-tester": "ts-node src/scripts/create-google-tester.ts",
     "script:send-beta-invitation": "ts-node src/scripts/send-beta-invitation.ts",
+    "script:send-update": "ts-node src/scripts/send-update-email.ts",
     "script:create-superadmin": "ts-node src/scripts/create-superadmin.ts"
   },
   "keywords": [

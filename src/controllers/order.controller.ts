@@ -36,7 +36,13 @@ export const createOrder = async (req: AuthRequest, res: Response, next: NextFun
  */
 export const getOrders = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        const organizationId = req.organizationId as string;
+        let organizationId = req.organizationId as string;
+
+        // If user is SUPER_ADMIN, they can override organizationId via query param
+        if (req.user?.role === UserRole.SUPER_ADMIN && req.query.organizationId) {
+            organizationId = req.query.organizationId as string;
+        }
+
         const pagination = parsePagination(req.query as any);
 
         const { orders, total } = await orderService.getOrders(
