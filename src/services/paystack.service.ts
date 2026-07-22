@@ -1,5 +1,4 @@
 import Organization from '../models/Organization';
-import Plan from '../models/Plan';
 import { SubscriptionStatus } from '../types';
 
 
@@ -109,7 +108,7 @@ import SubscriptionPayment from '../models/SubscriptionPayment';
  * @param {any} subscriptionData 
  */
 const updateSubscriptionStatus = async (organizationId: string, paymentData: any) => {
-    const { planId, months = 1 } = paymentData.metadata || {};
+    const { months = 1 } = paymentData.metadata || {};
 
     const organization = await Organization.findById(organizationId);
     if (!organization) {
@@ -117,35 +116,20 @@ const updateSubscriptionStatus = async (organizationId: string, paymentData: any
         return;
     }
 
-    // Differentiate Renewal vs. Plan Change
-    const isPlanRenewal = organization.planId === planId;
+    const isAlreadyActive = organization.subscriptionStatus === SubscriptionStatus.ACTIVE && 
+                            organization.subscriptionEndsAt && 
+                            new Date(organization.subscriptionEndsAt) > new Date();
 
-    // Determine new expiry date
-    let startDate = new Date();
-    if (isPlanRenewal && organization.subscriptionEndsAt && organization.subscriptionEndsAt > new Date()) {
-        // Renewal: Extend existing active subscription
-        startDate = new Date(organization.subscriptionEndsAt);
-    } else {
-        // Plan Change or New/Expired: Start from today
-        startDate = new Date();
-    }
+    let startDate = isAlreadyActive ? new Date(organization.subscriptionEndsAt!) : new Date();
 
     const subscriptionEndsAt = new Date(startDate);
     subscriptionEndsAt.setDate(subscriptionEndsAt.getDate() + (months * 30));
 
     const updateData: any = {
         subscriptionStatus: SubscriptionStatus.ACTIVE,
+        subscriptionPlan: 'premium',
         subscriptionEndsAt,
     };
-
-    // Update plan details if specified in metadata
-    if (planId) {
-        const plan = await Plan.findById(planId);
-        if (plan) {
-            updateData.planId = planId;
-            updateData.subscriptionPlan = plan.name;
-        }
-    }
 
     // Perform Update
     await Organization.findByIdAndUpdate(organizationId, updateData);
@@ -154,10 +138,10 @@ const updateSubscriptionStatus = async (organizationId: string, paymentData: any
     try {
         const notificationService = require('./notification.service').default;
         await notificationService.sendToUser(organization.createdBy, {
-            title: isPlanRenewal ? 'Subscription Renewed' : 'Subscription Activated',
-            message: `Your ${updateData.subscriptionPlan || 'premium'} plan is now active until ${subscriptionEndsAt.toLocaleDateString()}.`,
-            type: isPlanRenewal ? 'SUBSCRIPTION_RENEWED' : 'SUBSCRIPTION_ACTIVATED',
-            data: { planName: updateData.subscriptionPlan, status: SubscriptionStatus.ACTIVE },
+            title: isAlreadyActive ? 'Subscription Renewed' : 'Subscription Activated',
+            message: `Your premium plan is now active until ${subscriptionEndsAt.toLocaleDateString()}.`,
+            type: isAlreadyActive ? 'SUBSCRIPTION_RENEWED' : 'SUBSCRIPTION_ACTIVATED',
+            data: { planName: 'premium', status: SubscriptionStatus.ACTIVE },
         });
     } catch (error) {
         console.error('Failed to send subscription notification (Paystack)', error);
@@ -167,7 +151,7 @@ const updateSubscriptionStatus = async (organizationId: string, paymentData: any
     try {
         await SubscriptionPayment.create({
             organizationId,
-            planId: planId || organization.planId,
+            planId: organization.planId || 'premium',
             amount: paymentData.amount / 100, // Convert from kobo/pesewas
             currency: paymentData.currency,
             months,
@@ -178,11 +162,9 @@ const updateSubscriptionStatus = async (organizationId: string, paymentData: any
         });
     } catch (auditError) {
         console.error('Audit Error:', auditError);
-        // We don't throw here to avoid failing the whole webhook process 
-        // if just the audit log fails (though reference unique constraint should catch dupes)
     }
 
-    console.log(`Subscription ${isPlanRenewal ? 'Renewed' : 'Changed'} for org ${organizationId}: Plan ${updateData.subscriptionPlan}, Ends: ${subscriptionEndsAt}`);
+    console.log(`Subscription updated for org ${organizationId}: Plan premium, Ends: ${subscriptionEndsAt}`);
 };
 
 
