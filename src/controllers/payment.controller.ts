@@ -24,11 +24,7 @@ export const initializeSubscription = async (req: AuthRequest, res: Response, ne
             return errorResponse(res, 'Unauthorized', 401);
         }
 
-        const { planId, callbackUrl, months = 1 } = req.body;
-
-        if (!planId) {
-            return errorResponse(res, 'Plan ID is required', 400);
-        }
+        const { planId = 'premium', callbackUrl, months = 1 } = req.body;
 
         const initializationData = await subscriptionService.initializeSubscription(
             user.email,

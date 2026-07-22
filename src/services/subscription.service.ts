@@ -47,10 +47,13 @@ export const initializeSubscription = async (
     callbackUrl?: string,
     months: number = 1
 ) => {
-    // 1. Fetch the plan
-    const plan = await Plan.findById(planId);
-    if (!plan) {
-        throw new Error('Plan not found');
+    // 1. Determine plan price (defaulting to 50 GHS / month for Premium)
+    let planPrice = 50;
+    if (planId) {
+        const plan = (await Plan.findById(planId)) || (await Plan.findOne({ name: planId }));
+        if (plan?.price) {
+            planPrice = plan.price;
+        }
     }
 
     // 2. Fetch the organization to check current plan
@@ -60,7 +63,7 @@ export const initializeSubscription = async (
     }
 
     // 3. Calculate price based on months with volume discounts
-    const totalAmount = calculateSubscriptionPrice(plan.price, months);
+    const totalAmount = calculateSubscriptionPrice(planPrice, months);
 
     // 4. Determine gateway (defaulting to Paystack for now)
     const gateway = process.env.PAYMENT_GATEWAY || 'paystack';
@@ -68,9 +71,9 @@ export const initializeSubscription = async (
     if (gateway === 'paystack') {
         const metadata = {
             organizationId,
-            planId,
+            planId: planId || 'premium',
             months,
-            newPlanName: plan.name,
+            newPlanName: 'premium',
         };
 
         return await paystackService.initializeSubscription(
@@ -78,7 +81,7 @@ export const initializeSubscription = async (
             organizationId,
             callbackUrl,
             totalAmount,
-            plan.currency,
+            'GHS',
             metadata
         );
     }
