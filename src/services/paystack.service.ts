@@ -26,6 +26,9 @@ export const initializeSubscription = async (
     currency: string = 'GHS',
     metadata: any = {}
 ) => {
+    if (!PAYSTACK_SECRET_KEY) {
+        throw new Error('PAYSTACK_SECRET_KEY environment variable is missing on the server');
+    }
 
     const body: any = {
         email,

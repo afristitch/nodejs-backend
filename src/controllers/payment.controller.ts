@@ -15,7 +15,7 @@ import crypto from 'crypto';
  * Initialize subscription payment
  * POST /api/v1/payments/initialize
  */
-export const initializeSubscription = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const initializeSubscription = async (req: AuthRequest, res: Response, _next: NextFunction) => {
     try {
         const user = req.user;
         const organizationId = req.organizationId;
@@ -38,7 +38,7 @@ export const initializeSubscription = async (req: AuthRequest, res: Response, ne
         return successResponse(res, initializationData, 'Payment initialization successful');
 
     } catch (error: any) {
-        return next(error);
+        return errorResponse(res, error.message || 'Payment initialization failed', 400);
     }
 };
 
