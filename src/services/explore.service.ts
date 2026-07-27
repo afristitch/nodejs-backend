@@ -44,7 +44,12 @@ export const getPublicTailors = async (
  * Get a public tailor by ID
  */
 export const getPublicTailorById = async (id: string): Promise<IOrganization> => {
-    const tailor = await Organization.findOne({ _id: id });
+    const tailor = await Organization.findOne({
+        $or: [
+            { _id: id },
+            { slug: id }
+        ]
+    });
 
     if (!tailor) {
         throw new Error('Studio not found');

@@ -39,8 +39,15 @@ export const registerOrganization = async (orgData: any, userData: any, referral
     const planService = require('./plan.service').default;
     const freePlan = await planService.getPlanByName('free');
 
+    const generateSlug = (name: string) => {
+        const baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+        const randomString = Math.random().toString(36).substring(2, 8);
+        return baseSlug ? `${baseSlug}-${randomString}` : randomString;
+    };
+
     const organization = new Organization({
         ...orgData,
+        slug: generateSlug(orgData.name || 'org'),
         createdBy: user._id,
         subscriptionStatus: 'active',
         subscriptionPlan: 'free',

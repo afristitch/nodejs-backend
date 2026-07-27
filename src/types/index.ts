@@ -94,9 +94,16 @@ export interface IOrganization {
     
     // Discovery fields
     isPublic?: boolean;
+    slug?: string;
     bio?: string;
     specialties?: string[];
-    portfolioUrls?: string[];
+    portfolio?: Array<{
+        title: string;
+        description?: string;
+        imageUrl: string;
+        tags?: string[];
+        createdAt: Date;
+    }>;
     rating?: number;
     reviewCount?: number;
     referralCode?: string;
@@ -222,6 +229,33 @@ export interface IOrder {
     clothImageUrl?: string;
     clothSize?: string;
     styleId?: string; // UUID reference to Style model
+    organizationId: string; // UUID
+    createdBy: string; // UUID
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+/**
+ * Quote Item Interface (for Pro-Forma quotes)
+ */
+export interface IQuoteItem {
+    id: string; // Used by frontend for UI mapping
+    description: string;
+    quantity: number;
+    price: number;
+}
+
+/**
+ * Proforma Interface (Pro-Forma Invoices)
+ */
+export interface IProforma {
+    _id: string; // UUID
+    clientName: string;
+    clientPhone: string;
+    clientAddress?: string;
+    items: IQuoteItem[];
+    subtotal: number;
+    notes?: string;
     organizationId: string; // UUID
     createdBy: string; // UUID
     createdAt: Date;

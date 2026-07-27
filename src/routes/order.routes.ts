@@ -125,8 +125,8 @@ router.patch(
 /**
  * @route   DELETE /api/v1/orders/:id
  * @desc    Delete order
- * @access  Private
+ * @access  Private (Admin Only)
  */
-router.delete('/:id', orderController.deleteOrder);
+router.delete('/:id', requireAdmin, orderController.deleteOrder);
 
 export default router;
