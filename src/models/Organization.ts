@@ -19,6 +19,12 @@ const organizationSchema = new Schema<IOrganization>(
       trim: true,
       maxlength: [100, 'Organization name cannot exceed 100 characters'],
     },
+    slug: {
+      type: String,
+      unique: true,
+      sparse: true,
+      index: true,
+    },
     logoUrl: {
       type: String,
       trim: true,

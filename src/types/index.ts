@@ -94,6 +94,7 @@ export interface IOrganization {
     
     // Discovery fields
     isPublic?: boolean;
+    slug?: string;
     bio?: string;
     specialties?: string[];
     portfolio?: Array<{
