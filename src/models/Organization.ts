@@ -89,10 +89,13 @@ const organizationSchema = new Schema<IOrganization>(
       type: [String],
       default: [],
     },
-    portfolioUrls: {
-      type: [String],
-      default: [],
-    },
+    portfolio: [{
+      title: { type: String, required: true },
+      description: { type: String, default: null },
+      imageUrl: { type: String, required: true },
+      tags: { type: [String], default: [] },
+      createdAt: { type: Date, default: Date.now }
+    }],
     rating: {
       type: Number,
       default: 0,
