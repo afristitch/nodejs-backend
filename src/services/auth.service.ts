@@ -333,7 +333,7 @@ const getOrCreateOAuthUser = async (
         if (updated) await user.save();
 
         if (user.role !== 'SUPER_ADMIN' && !user.organizationId) {
-             throw new Error('No organization found');
+            throw new Error('No organization found');
         }
 
         const accessToken = generateAccessToken({ userId: user._id });
@@ -362,7 +362,7 @@ export const googleLogin = async (idToken: string): Promise<AuthResponse> => {
             audience: process.env.GOOGLE_CLIENT_ID,
         });
         const payload = ticket.getPayload();
-        
+
         if (!payload || !payload.email) {
             throw new Error('Invalid Google token');
         }
@@ -388,7 +388,7 @@ export const appleLogin = async (idToken: string): Promise<AuthResponse> => {
         });
 
         if (!payload || !payload.email) {
-             throw new Error('Invalid Apple token or email not shared');
+            throw new Error('Invalid Apple token or email not shared');
         }
 
         const email = payload.email;

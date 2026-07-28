@@ -57,28 +57,7 @@ export const getOrganizations = async (
     }
     
     if (status) {
-        const now = new Date();
-        const statusLower = status.toLowerCase();
-
-        if (statusLower === 'expired') {
-            // Include both explicitly expired and trials that have ended
-            query.$or = [
-                { subscriptionStatus: { $regex: '^expired$', $options: 'i' } },
-                { 
-                    subscriptionStatus: { $regex: '^trialing$', $options: 'i' },
-                    subscriptionEndsAt: { $lt: now }
-                }
-            ];
-        } else if (statusLower === 'trialing') {
-            // Only include trials that haven't ended yet
-            query.subscriptionStatus = { $regex: '^trialing$', $options: 'i' };
-            query.$or = [
-                { subscriptionEndsAt: { $exists: false } },
-                { subscriptionEndsAt: { $gte: now } }
-            ];
-        } else {
-            query.subscriptionStatus = { $regex: `^${status}$`, $options: 'i' };
-        }
+        query.subscriptionStatus = { $regex: `^${status}$`, $options: 'i' };
     }
 
     let orgsQuery = Organization.find(query).sort({ createdAt: -1 });

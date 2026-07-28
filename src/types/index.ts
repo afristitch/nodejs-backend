@@ -44,7 +44,6 @@ export enum SubscriptionStatus {
     ACTIVE = 'active',
     CANCELLED = 'cancelled',
     EXPIRED = 'expired',
-    TRIALING = 'trialing',
 }
 
 /**
@@ -90,7 +89,6 @@ export interface IOrganization {
     subscriptionStatus: SubscriptionStatus;
     subscriptionEndsAt?: Date;
     revenuecatAppUserId?: string;
-    trialExpiryNotificationSent?: boolean;
     isSetupComplete?: boolean;
     
     // Discovery fields
