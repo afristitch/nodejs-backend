@@ -29,9 +29,28 @@ const userSchema = new Schema<IUser>(
         },
         password: {
             type: String,
-            required: [true, 'Password is required'],
+            required: [
+                function (this: any) {
+                    return !this.googleId && !this.appleId;
+                },
+                'Password is required'
+            ],
             minlength: [6, 'Password must be at least 6 characters'],
             select: false,
+        },
+        googleId: {
+            type: String,
+            trim: true,
+            default: null,
+            sparse: true,
+            unique: true,
+        },
+        appleId: {
+            type: String,
+            trim: true,
+            default: null,
+            sparse: true,
+            unique: true,
         },
         role: {
             type: String,
@@ -78,7 +97,7 @@ userSchema.index({ organizationId: 1, role: 1 });
 
 // Hash password before saving
 userSchema.pre('save', async function (next) {
-    if (!this.isModified('password')) return next();
+    if (!this.isModified('password') || !this.password) return next();
 
     try {
         const salt = await bcrypt.genSalt(10);
@@ -93,6 +112,7 @@ userSchema.pre('save', async function (next) {
 userSchema.methods.comparePassword = async function (
     candidatePassword: string
 ): Promise<boolean> {
+    if (!this.password) return false;
     try {
         return await bcrypt.compare(candidatePassword, this.password);
     } catch (error) {

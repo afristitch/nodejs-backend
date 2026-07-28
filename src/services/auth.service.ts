@@ -3,6 +3,10 @@ import Organization from '../models/Organization';
 import { generateAccessToken, generateRefreshToken, generateEmailToken, verifyEmailToken, verifyRefreshToken } from '../utils/jwt';
 import { sendVerificationEmail, sendPasswordResetEmail } from '../utils/email';
 import { IUser, AuthResponse } from '../types';
+import { OAuth2Client } from 'google-auth-library';
+import appleSignin from 'apple-signin-auth';
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 /**
  * Authentication Service
@@ -23,9 +27,11 @@ export const registerOrganization = async (orgData: any, userData: any, referral
     }
 
     // Check if organization email already exists
-    const existingOrg = await Organization.findOne({ email: orgData.email });
-    if (existingOrg) {
-        throw new Error('Organization email already registered');
+    if (orgData && orgData.email) {
+        const existingOrg = await Organization.findOne({ email: orgData.email });
+        if (existingOrg) {
+            throw new Error('Organization email already registered');
+        }
     }
 
     // Create admin user first (without organization)
@@ -45,14 +51,20 @@ export const registerOrganization = async (orgData: any, userData: any, referral
         return baseSlug ? `${baseSlug}-${randomString}` : randomString;
     };
 
+    const orgName = orgData?.name || `${userData.name}'s Shop`;
+    const orgEmail = orgData?.email || userData.email;
+
     const organization = new Organization({
         ...orgData,
-        slug: generateSlug(orgData.name || 'org'),
+        name: orgName,
+        email: orgEmail,
+        slug: generateSlug(orgName),
         createdBy: user._id,
         subscriptionStatus: 'active',
         subscriptionPlan: 'free',
         planId: freePlan?._id || null,
         referralCode,
+        isSetupComplete: !!(orgData && orgData.name && orgData.email),
     });
 
 
@@ -292,6 +304,105 @@ export const updatePassword = async (
     return user;
 };
 
+/**
+ * Helper to get or create user and default organization via OAuth
+ */
+const getOrCreateOAuthUser = async (
+    email: string,
+    name: string,
+    providerData: { googleId?: string; appleId?: string },
+    isEmailVerified: boolean = true
+): Promise<AuthResponse> => {
+    let user = await User.findOne({ email });
+
+    if (user) {
+        // Update user with new provider ID if not present
+        let updated = false;
+        if (providerData.googleId && !user.googleId) {
+            user.googleId = providerData.googleId;
+            updated = true;
+        }
+        if (providerData.appleId && !user.appleId) {
+            user.appleId = providerData.appleId;
+            updated = true;
+        }
+        if (!user.isEmailVerified && isEmailVerified) {
+            user.isEmailVerified = true;
+            updated = true;
+        }
+        if (updated) await user.save();
+
+        if (user.role !== 'SUPER_ADMIN' && !user.organizationId) {
+             throw new Error('No organization found');
+        }
+
+        const accessToken = generateAccessToken({ userId: user._id });
+        const refreshToken = generateRefreshToken({ userId: user._id });
+        const organization = user.organizationId ? await Organization.findById(user.organizationId) : undefined;
+
+        return { user, accessToken, refreshToken, organization: organization || undefined };
+    }
+
+    // Register new user with default organization
+    return await registerOrganization({}, {
+        name,
+        email,
+        isEmailVerified,
+        ...providerData
+    });
+};
+
+/**
+ * Google Login
+ */
+export const googleLogin = async (idToken: string): Promise<AuthResponse> => {
+    try {
+        const ticket = await googleClient.verifyIdToken({
+            idToken,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        
+        if (!payload || !payload.email) {
+            throw new Error('Invalid Google token');
+        }
+
+        const email = payload.email;
+        const name = payload.name || email.split('@')[0];
+        const googleId = payload.sub;
+
+        return await getOrCreateOAuthUser(email, name, { googleId }, payload.email_verified);
+    } catch (error) {
+        throw new Error('Google authentication failed');
+    }
+};
+
+/**
+ * Apple Login
+ */
+export const appleLogin = async (idToken: string): Promise<AuthResponse> => {
+    try {
+        const payload = await appleSignin.verifyIdToken(idToken, {
+            audience: process.env.APPLE_CLIENT_ID,
+            ignoreExpiration: false,
+        });
+
+        if (!payload || !payload.email) {
+             throw new Error('Invalid Apple token or email not shared');
+        }
+
+        const email = payload.email;
+        // Apple only sends name on first login in a separate field, not in token.
+        // Frontend should pass name if available, otherwise we use email prefix.
+        const name = email.split('@')[0];
+        const appleId = payload.sub;
+
+        return await getOrCreateOAuthUser(email, name, { appleId });
+    } catch (error) {
+        throw new Error('Apple authentication failed');
+    }
+};
+
 const authService = {
     registerOrganization,
     login,
@@ -301,6 +412,8 @@ const authService = {
     refreshAccessToken,
     resendVerification,
     updatePassword,
+    googleLogin,
+    appleLogin,
 };
 
 export default authService;

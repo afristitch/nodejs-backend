@@ -26,9 +26,12 @@ export const updateOrganization = async (
     id: string,
     updateData: any
 ): Promise<IOrganization> => {
+    // If updating org details, mark setup as complete
+    const updatedData = { ...updateData, isSetupComplete: true };
+
     const organization = await Organization.findByIdAndUpdate(
         id,
-        { $set: updateData },
+        { $set: updatedData },
         { new: true, runValidators: true }
     );
 

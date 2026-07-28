@@ -57,6 +57,46 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 };
 
 /**
+ * Google Login
+ * POST /api/v1/auth/google
+ */
+export const googleLogin = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { idToken } = req.body;
+
+        const result = await authService.googleLogin(idToken);
+
+        successResponse(res, result, 'Google login successful');
+    } catch (error: any) {
+        if (error.message.includes('Invalid') || error.message.includes('failed')) {
+            errorResponse(res, error.message, 401);
+            return;
+        }
+        next(error);
+    }
+};
+
+/**
+ * Apple Login
+ * POST /api/v1/auth/apple
+ */
+export const appleLogin = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { idToken } = req.body;
+
+        const result = await authService.appleLogin(idToken);
+
+        successResponse(res, result, 'Apple login successful');
+    } catch (error: any) {
+        if (error.message.includes('Invalid') || error.message.includes('failed')) {
+            errorResponse(res, error.message, 401);
+            return;
+        }
+        next(error);
+    }
+};
+
+/**
  * Verify email
  * GET /api/v1/auth/verify-email/:token
  */

@@ -80,6 +80,10 @@ const organizationSchema = new Schema<IOrganization>(
       type: Boolean,
       default: false,
     },
+    isSetupComplete: {
+      type: Boolean,
+      default: false,
+    },
     
     // Discovery fields
     isPublic: {
