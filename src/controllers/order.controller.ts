@@ -18,6 +18,11 @@ export const createOrder = async (req: AuthRequest, res: Response, next: NextFun
         const organizationId = req.organizationId as string;
         const userId = req.user?._id as string;
 
+        // If user is STAFF, force assignedToId to their own ID
+        if (req.user?.role === UserRole.STAFF) {
+            req.body.assignedToId = userId;
+        }
+
         const order = await orderService.createOrder(
             organizationId,
             req.body,
@@ -41,6 +46,11 @@ export const getOrders = async (req: AuthRequest, res: Response, next: NextFunct
         // If user is SUPER_ADMIN, they can override organizationId via query param
         if (req.user?.role === UserRole.SUPER_ADMIN && req.query.organizationId) {
             organizationId = req.query.organizationId as string;
+        }
+
+        // If user is STAFF, strictly scope orders to those assigned to them
+        if (req.user?.role === UserRole.STAFF) {
+            req.query.assignedToId = req.user._id;
         }
 
         const pagination = parsePagination(req.query as any);

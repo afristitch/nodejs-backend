@@ -66,6 +66,7 @@ export const getOrders = async (
     if (filters.status) query.status = filters.status;
     if (filters.paymentStatus) query.paymentStatus = filters.paymentStatus;
     if (filters.orderNumber) query.orderNumber = { $regex: filters.orderNumber, $options: 'i' };
+    if (filters.assignedToId) query.assignedToId = filters.assignedToId;
     
     // Maintain backward compatibility: Only paginate if explicitly requested
     const shouldPaginate = !!(filters.page && filters.limit);

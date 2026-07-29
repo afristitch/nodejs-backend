@@ -1,6 +1,6 @@
 import { Response, NextFunction } from 'express';
 import Organization from '../models/Organization';
-import { AuthRequest, SubscriptionStatus } from '../types';
+import { AuthRequest } from '../types';
 
 /**
  * Subscription Middleware
@@ -32,34 +32,13 @@ const subscriptionMiddleware = async (req: AuthRequest, res: Response, next: Nex
         }
 
         const now = new Date();
+        const endsAt = organization.subscriptionEndsAt;
 
-        const isTrialing = organization.subscriptionStatus === SubscriptionStatus.TRIALING;
-        const isActive = organization.subscriptionStatus === SubscriptionStatus.ACTIVE;
-
-        if (isTrialing || isActive) {
-            const endsAt = organization.subscriptionEndsAt;
-            if (endsAt && endsAt < now) {
-                organization.subscriptionStatus = SubscriptionStatus.EXPIRED;
-                await organization.save();
-
-                const message = isTrialing
-                    ? 'Free trial has expired. Please subscribe to continue.'
-                    : 'Subscription has expired. Please renew to continue.';
-                const code = isTrialing ? 'TRIAL_EXPIRED' : 'SUBSCRIPTION_EXPIRED';
-
-                return res.status(406).json({ success: false, message, code });
-            }
-            return next();
-        }
-
-        // 3. Block if expired or cancelled
-        if (organization.subscriptionStatus === SubscriptionStatus.EXPIRED ||
-            organization.subscriptionStatus === SubscriptionStatus.CANCELLED) {
-            return res.status(406).json({
-                success: false,
-                message: 'Access denied. Please subscribe to a plan to continue.',
-                code: 'NO_ACTIVE_SUBSCRIPTION',
-            });
+        if (endsAt && endsAt < now) {
+            organization.subscriptionPlan = 'free';
+            // @ts-ignore
+            organization.subscriptionEndsAt = null;
+            await organization.save();
         }
 
         next();

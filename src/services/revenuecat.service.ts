@@ -166,20 +166,10 @@ const handleActivation = async (organizationId: string, event: RevenueCatEvent):
         return;
     }
 
-    const isTrial = event.period_type === 'TRIAL';
-
     // Update common mapping field
     const updateData: any = {
         revenuecatAppUserId: event.app_user_id,
     };
-
-    if (isTrial) {
-        // Trials are automatic and cannot be extended via webhook
-        // We only link the user ID for future mapping
-        console.log(`[RevenueCat] Trial event linked for org ${organizationId}, but dates preserved as per policy.`);
-        await Organization.findByIdAndUpdate(organizationId, updateData);
-        return;
-    }
 
     // Handle Paid Subscriptions
     const status = SubscriptionStatus.ACTIVE;

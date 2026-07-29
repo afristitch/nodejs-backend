@@ -76,7 +76,7 @@ const organizationSchema = new Schema<IOrganization>(
       type: String,
       default: null,
     },
-    trialExpiryNotificationSent: {
+    isSetupComplete: {
       type: Boolean,
       default: false,
     },

@@ -45,6 +45,34 @@ router.post(
 );
 
 /**
+ * @route   POST /api/v1/auth/google
+ * @desc    Login with Google
+ * @access  Public
+ */
+router.post(
+    '/google',
+    [
+        body('idToken').notEmpty().withMessage('idToken is required'),
+        validate,
+    ],
+    authController.googleLogin
+);
+
+/**
+ * @route   POST /api/v1/auth/apple
+ * @desc    Login with Apple
+ * @access  Public
+ */
+router.post(
+    '/apple',
+    [
+        body('idToken').notEmpty().withMessage('idToken is required'),
+        validate,
+    ],
+    authController.appleLogin
+);
+
+/**
  * @route   GET /api/v1/auth/verify-email/:token
  * @desc    Verify email address
  * @access  Public

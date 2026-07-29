@@ -44,7 +44,6 @@ export enum SubscriptionStatus {
     ACTIVE = 'active',
     CANCELLED = 'cancelled',
     EXPIRED = 'expired',
-    TRIALING = 'trialing',
 }
 
 /**
@@ -90,7 +89,7 @@ export interface IOrganization {
     subscriptionStatus: SubscriptionStatus;
     subscriptionEndsAt?: Date;
     revenuecatAppUserId?: string;
-    trialExpiryNotificationSent?: boolean;
+    isSetupComplete?: boolean;
     
     // Discovery fields
     isPublic?: boolean;
@@ -137,7 +136,9 @@ export interface IUser {
     _id: string; // UUID
     name: string;
     email: string;
-    password: string;
+    password?: string;
+    googleId?: string;
+    appleId?: string;
     role: UserRole;
     organizationId?: string; // UUID
     isEmailVerified: boolean;
