@@ -46,14 +46,12 @@ const userSchema = new Schema<IUser>(
         googleId: {
             type: String,
             trim: true,
-            default: null,
             sparse: true,
             unique: true,
         },
         appleId: {
             type: String,
             trim: true,
-            default: null,
             sparse: true,
             unique: true,
         },
