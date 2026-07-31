@@ -9,7 +9,7 @@ import { parsePagination } from '../utils/pagination';
 export const createStyle = async (req: AuthRequest, res: Response) => {
     try {
         const isGlobal = req.body.isGlobal === true || req.body.isGlobal === 'true';
-        const isAdmin = req.user?.role === 'SUPER_ADMIN';
+        const isAdmin = req.membershipRole === 'SUPER_ADMIN';
 
         if (isGlobal && !isAdmin) {
             return res.status(403).json({

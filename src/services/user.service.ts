@@ -1,5 +1,6 @@
 import User from '../models/User';
 import Organization from '../models/Organization';
+import OrganizationMembership from '../models/OrganizationMembership';
 import Client from '../models/Client';
 import Order from '../models/Order';
 import Measurement from '../models/Measurement';
@@ -9,7 +10,7 @@ import DeviceToken from '../models/DeviceToken';
 import Notification from '../models/Notification';
 import SubscriptionPayment from '../models/SubscriptionPayment';
 import { IUser, PaginationOptions, UserRole } from '../types';
-import { sendCredentialsEmail } from '../utils/email';
+import { sendCredentialsEmail, sendAddedToOrganizationEmail } from '../utils/email';
 
 /**
  * User Service
@@ -23,21 +24,74 @@ import { sendCredentialsEmail } from '../utils/email';
  * @returns {Promise<IUser>} Created user
  */
 export const createUser = async (organizationId: string | undefined, userData: any): Promise<IUser> => {
-    const existingUser = await User.findOne({ email: userData.email });
-    if (existingUser) {
-        throw new Error('Email already registered');
+    if (!organizationId) throw new Error('Organization ID is required');
+
+    let user = await User.findOne({ email: userData.email });
+    let isNewUser = false;
+    let generatedPassword = userData.password;
+
+    if (!user) {
+        if (!generatedPassword) {
+            generatedPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8) + "!";
+        }
+        user = new User({
+            ...userData,
+            password: generatedPassword,
+        });
+        await user.save();
+        isNewUser = true;
+    } else if (userData.role === UserRole.ORG_ADMIN) {
+        // If inviting an existing user as an ORG_ADMIN, check if they already are an ORG_ADMIN elsewhere
+        const existingAdmin = await OrganizationMembership.findOne({ userId: user._id, role: UserRole.ORG_ADMIN });
+        if (existingAdmin) {
+            throw new Error('This user already owns or admins another workspace and cannot be made an admin here.');
+        }
     }
 
-    const user = new User({
-        ...userData,
+    // Check if membership already exists
+    const existingMembership = await OrganizationMembership.findOne({ userId: user._id, organizationId });
+    if (existingMembership) {
+        throw new Error('User is already a member of this organization');
+    }
+
+    const membership = new OrganizationMembership({
+        userId: user._id,
         organizationId,
+        role: userData.role || UserRole.STAFF,
+        status: 'active'
     });
+    await membership.save();
 
-    await user.save();
+    if (isNewUser) {
+        // Create Personal Workspace ONLY if they aren't already being made an ORG_ADMIN of the invited org
+        if (userData.role !== UserRole.ORG_ADMIN) {
+            const personalOrg = new Organization({
+                name: `${user.name.split(' ')[0]}'s Workspace`,
+                email: user.email,
+                phone: userData.phone || '',
+                subscriptionPlan: 'free',
+                subscriptionStatus: 'ACTIVE',
+            });
+            await personalOrg.save();
 
-    // Send credentials email to the new user
-    // We pass the raw password from userData before it was hashed in the model pre-save hook
-    await sendCredentialsEmail(user.email, user.name, userData.password);
+            const personalMembership = new OrganizationMembership({
+                userId: user._id,
+                organizationId: personalOrg._id,
+                role: UserRole.ORG_ADMIN,
+                status: 'active'
+            });
+            await personalMembership.save();
+        }
+
+        // Send credentials email to the new user
+        await sendCredentialsEmail(user.email, user.name, generatedPassword);
+    } else {
+        // Send invitation email
+        const org = await Organization.findById(organizationId);
+        if (org) {
+            await sendAddedToOrganizationEmail(user.email, user.name, org.name);
+        }
+    }
 
     return user;
 };
@@ -56,25 +110,28 @@ export const getUsers = async (
     filterOrganizationId: string = '',
     role: string = '',
     isPaginated: boolean = false
-): Promise<{ users: IUser[]; total: number }> => {
-    const query: any = globalOrganizationId ? { organizationId: globalOrganizationId } : {};
+): Promise<{ users: any[]; total: number }> => {
+    
+    const orgId = filterOrganizationId || globalOrganizationId;
+    if (!orgId) throw new Error('Organization ID is required');
 
-    if (filterOrganizationId && !globalOrganizationId) {
-        query.organizationId = filterOrganizationId;
-    }
-
+    const membershipQuery: any = { organizationId: orgId };
     if (role) {
-        query.role = { $regex: `^${role}$`, $options: 'i' };
+        membershipQuery.role = { $regex: `^${role}$`, $options: 'i' };
     }
 
+    let memberships = await OrganizationMembership.find(membershipQuery).lean();
+    const userIds = memberships.map(m => m.userId);
+
+    const userQuery: any = { _id: { $in: userIds } };
     if (search) {
-        query.$or = [
+        userQuery.$or = [
             { name: { $regex: search, $options: 'i' } },
             { email: { $regex: search, $options: 'i' } },
         ];
     }
 
-    let usersQuery = User.find(query).sort({ createdAt: -1 });
+    let usersQuery = User.find(userQuery).sort({ createdAt: -1 }).lean();
 
     if (isPaginated) {
         usersQuery = usersQuery.skip(options.skip).limit(options.limit);
@@ -82,10 +139,16 @@ export const getUsers = async (
 
     const [users, total] = await Promise.all([
         usersQuery,
-        User.countDocuments(query),
+        User.countDocuments(userQuery),
     ]);
 
-    return { users, total };
+    // Map memberships onto users
+    const mappedUsers = users.map(u => {
+        const m = memberships.find(mem => mem.userId === u._id);
+        return { ...u, role: m?.role, status: m?.status };
+    });
+
+    return { users: mappedUsers, total };
 };
 
 /**
@@ -94,17 +157,21 @@ export const getUsers = async (
  * @param {string} organizationId - Organization ID
  * @returns {Promise<IUser>} User
  */
-export const getUserById = async (id: string, organizationId: string | undefined): Promise<IUser> => {
-    const query: any = { _id: id };
-    if (organizationId) query.organizationId = organizationId;
+export const getUserById = async (id: string, organizationId: string | undefined): Promise<any> => {
+    if (!organizationId) throw new Error('Organization ID is required');
+
+    const membership = await OrganizationMembership.findOne({ userId: id, organizationId }).lean();
+    if (!membership) {
+        throw new Error('User not found in this organization');
+    }
     
-    const user = await User.findOne(query);
+    const user = await User.findById(id).lean();
 
     if (!user) {
         throw new Error('User not found');
     }
 
-    return user;
+    return { ...user, role: membership.role, status: membership.status };
 };
 
 /**
@@ -118,15 +185,24 @@ export const updateUser = async (
     id: string,
     organizationId: string | undefined,
     updateData: any
-): Promise<IUser> => {
-    const query: any = { _id: id };
-    if (organizationId) query.organizationId = organizationId;
+): Promise<any> => {
+    // If organizationId is provided, we might be updating the membership role
+    if (organizationId && updateData.role) {
+        await OrganizationMembership.findOneAndUpdate(
+            { userId: id, organizationId },
+            { $set: { role: updateData.role } }
+        );
+    }
+
+    // Remove role from updateData before updating User
+    const userUpdate = { ...updateData };
+    delete userUpdate.role;
 
     const user = await User.findOneAndUpdate(
-        query,
-        { $set: updateData },
+        { _id: id },
+        { $set: userUpdate },
         { new: true, runValidators: true }
-    );
+    ).lean();
 
     if (!user) {
         throw new Error('User not found');
@@ -142,13 +218,12 @@ export const updateUser = async (
  * @returns {Promise<boolean>} Success
  */
 export const deleteUser = async (id: string, organizationId: string | undefined): Promise<boolean> => {
-    const query: any = { _id: id };
-    if (organizationId) query.organizationId = organizationId;
+    if (!organizationId) throw new Error('Organization ID is required');
 
-    const result = await User.deleteOne(query);
+    const result = await OrganizationMembership.deleteOne({ userId: id, organizationId });
 
     if (result.deletedCount === 0) {
-        throw new Error('User not found');
+        throw new Error('User not found in this organization');
     }
 
     return true;
@@ -166,35 +241,61 @@ export const deleteAccount = async (userId: string): Promise<boolean> => {
         throw new Error('User not found');
     }
 
-    const { organizationId, role } = user;
+    const memberships = await OrganizationMembership.find({ userId });
+    
+    // Find organizations where this user is the only ORG_ADMIN
+    for (const membership of memberships) {
+        if (membership.role === UserRole.ORG_ADMIN) {
+            const adminCount = await OrganizationMembership.countDocuments({ organizationId: membership.organizationId, role: UserRole.ORG_ADMIN });
+            if (adminCount <= 1) {
+                // Cascading delete for this organization since no other admins exist
 
-    if (role === UserRole.ORG_ADMIN) {
-        // Find all users in the organization to delete their tokens/notifications
-        const orgUsers = await User.find({ organizationId });
-        const orgUserIds = orgUsers.map(u => u._id);
 
-        // Delete all data associated with the organization
-        await Promise.all([
-            Client.deleteMany({ organizationId }),
-            Order.deleteMany({ organizationId }),
-            Measurement.deleteMany({ organizationId }),
-            MeasurementTemplate.deleteMany({ organizationId }),
-            Style.deleteMany({ organizationId }),
-            SubscriptionPayment.deleteMany({ organizationId }),
-            Notification.deleteMany({ userId: { $in: orgUserIds } }),
-            DeviceToken.deleteMany({ userId: { $in: orgUserIds } }),
-            User.deleteMany({ organizationId }),
-            Organization.deleteOne({ _id: organizationId }),
-        ]);
-    } else {
-        // STAFF member - only delete their own data
-        await Promise.all([
-            Notification.deleteMany({ userId }),
-            DeviceToken.deleteMany({ userId }),
-            User.deleteOne({ _id: userId }),
-        ]);
+                await Promise.all([
+                    Client.deleteMany({ organizationId: membership.organizationId }),
+                    Order.deleteMany({ organizationId: membership.organizationId }),
+                    Measurement.deleteMany({ organizationId: membership.organizationId }),
+                    MeasurementTemplate.deleteMany({ organizationId: membership.organizationId }),
+                    Style.deleteMany({ organizationId: membership.organizationId }),
+                    SubscriptionPayment.deleteMany({ organizationId: membership.organizationId }),
+                    OrganizationMembership.deleteMany({ organizationId: membership.organizationId }),
+                    Organization.deleteOne({ _id: membership.organizationId }),
+                ]);
+            }
+        }
     }
 
+    // Delete user and their remaining references
+    await Promise.all([
+        Notification.deleteMany({ userId }),
+        DeviceToken.deleteMany({ userId }),
+        OrganizationMembership.deleteMany({ userId }),
+        User.deleteOne({ _id: userId }),
+    ]);
+
+    return true;
+};
+
+/**
+ * Exit an organization (User leaving an org)
+ * @param {string} userId - User ID
+ * @param {string} organizationId - Organization ID
+ * @returns {Promise<boolean>} Success
+ */
+export const exitOrganization = async (userId: string, organizationId: string): Promise<boolean> => {
+    const membership = await OrganizationMembership.findOne({ userId, organizationId });
+    if (!membership) {
+        throw new Error('User not found in this organization');
+    }
+
+    if (membership.role === UserRole.ORG_ADMIN) {
+        const adminCount = await OrganizationMembership.countDocuments({ organizationId, role: UserRole.ORG_ADMIN });
+        if (adminCount <= 1) {
+            throw new Error('Cannot leave organization. You are the only admin. You must delete the workspace instead or promote someone else to admin first.');
+        }
+    }
+
+    await OrganizationMembership.deleteOne({ userId, organizationId });
     return true;
 };
 
@@ -205,6 +306,7 @@ const userService = {
     updateUser,
     deleteUser,
     deleteAccount,
+    exitOrganization
 };
 
 export default userService;

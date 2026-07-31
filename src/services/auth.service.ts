@@ -1,8 +1,9 @@
 import User from '../models/User';
 import Organization from '../models/Organization';
+import OrganizationMembership from '../models/OrganizationMembership';
 import { generateAccessToken, generateRefreshToken, generateEmailToken, verifyEmailToken, verifyRefreshToken } from '../utils/jwt';
 import { sendVerificationEmail, sendPasswordResetEmail } from '../utils/email';
-import { IUser, AuthResponse } from '../types';
+import { IUser, AuthResponse, UserRole } from '../types';
 import { OAuth2Client } from 'google-auth-library';
 import appleSignin from 'apple-signin-auth';
 
@@ -34,11 +35,9 @@ export const registerOrganization = async (orgData: any, userData: any, referral
         }
     }
 
-    // Create admin user first (without organization)
+    // Create admin user first
     const user = new User({
         ...userData,
-        role: 'ORG_ADMIN',
-        organizationId: 'temp', // Updated later
     });
 
     // Create organization
@@ -68,13 +67,18 @@ export const registerOrganization = async (orgData: any, userData: any, referral
     });
 
 
-
-    // Update user with organization ID
-    user.organizationId = organization._id;
-
     // Save both
     await user.save();
     await organization.save();
+
+    // Create Membership
+    const membership = new OrganizationMembership({
+        userId: user._id,
+        organizationId: organization._id,
+        role: UserRole.ORG_ADMIN,
+        status: 'active'
+    });
+    await membership.save();
 
     // Generate email verification token
     const emailToken = generateEmailToken({ userId: user._id });
@@ -87,10 +91,11 @@ export const registerOrganization = async (orgData: any, userData: any, referral
     const refreshToken = generateRefreshToken({ userId: user._id });
 
     return {
-        organization,
         user,
         accessToken,
         refreshToken,
+        memberships: [{ ...membership.toObject(), organization: organization.toObject() }],
+        organization, // Legacy fallback
     };
 };
 
@@ -108,8 +113,33 @@ export const login = async (email: string, password: string): Promise<AuthRespon
         throw new Error('Invalid credentials');
     }
 
-    if (user.role !== 'SUPER_ADMIN' && !user.organizationId) {
-        throw new Error('No organization found');
+    let memberships = await OrganizationMembership.find({ userId: user._id, status: 'active' }).lean();
+
+    // Check if they have a personal workspace (where they are ORG_ADMIN)
+    const hasAdminWorkspace = memberships.some(m => m.role === 'ORG_ADMIN');
+
+    if (!hasAdminWorkspace) {
+        const Organization = (await import('../models/Organization')).default;
+        
+        const personalOrg = new Organization({
+            name: `${user.name.split(' ')[0]}'s Workspace`,
+            email: user.email,
+            phone: (user as any).phone || '',
+            subscriptionPlan: 'free',
+            subscriptionStatus: 'ACTIVE',
+        });
+        await personalOrg.save();
+
+        const membership = new OrganizationMembership({
+            organizationId: personalOrg._id,
+            userId: user._id,
+            role: 'ORG_ADMIN',
+            status: 'active'
+        });
+        await membership.save();
+        
+        // Add to memberships array
+        memberships.push(membership.toObject() as any);
     }
 
     // Check password
@@ -134,11 +164,18 @@ export const login = async (email: string, password: string): Promise<AuthRespon
 
     // Remove password from user object
     user.password = '';
+    // Populate organizations for the response
+    const populatedMemberships = await Promise.all(memberships.map(async (m) => {
+        const org = await Organization.findById(m.organizationId).lean();
+        return { ...m, organization: org };
+    }));
 
     return {
         user,
         accessToken,
         refreshToken,
+        memberships: populatedMemberships as any,
+        organization: populatedMemberships[0]?.organization as any, // Legacy fallback
     };
 };
 
@@ -332,15 +369,48 @@ const getOrCreateOAuthUser = async (
         }
         if (updated) await user.save();
 
-        if (user.role !== 'SUPER_ADMIN' && !user.organizationId) {
-            throw new Error('No organization found');
+        let memberships = await OrganizationMembership.find({ userId: user._id, status: 'active' }).lean();
+        
+        const hasAdminWorkspace = memberships.some(m => m.role === 'ORG_ADMIN');
+
+        if (!hasAdminWorkspace) {
+            const Organization = (await import('../models/Organization')).default;
+            
+            const personalOrg = new Organization({
+                name: `${user.name.split(' ')[0]}'s Workspace`,
+                email: user.email,
+                phone: (user as any).phone || '',
+                subscriptionPlan: 'free',
+                subscriptionStatus: 'ACTIVE',
+            });
+            await personalOrg.save();
+
+            const membership = new OrganizationMembership({
+                organizationId: personalOrg._id,
+                userId: user._id,
+                role: 'ORG_ADMIN',
+                status: 'active'
+            });
+            await membership.save();
+            
+            memberships.push(membership.toObject() as any);
         }
 
         const accessToken = generateAccessToken({ userId: user._id });
         const refreshToken = generateRefreshToken({ userId: user._id });
-        const organization = user.organizationId ? await Organization.findById(user.organizationId) : undefined;
+        
+        const populatedMemberships = await Promise.all(memberships.map(async (m) => {
+            const org = await Organization.findById(m.organizationId).lean();
+            return { ...m, organization: org };
+        }));
 
-        return { user, accessToken, refreshToken, organization: organization || undefined };
+        return { 
+            user, 
+            accessToken, 
+            refreshToken, 
+            memberships: populatedMemberships as any,
+            organization: populatedMemberships[0]?.organization as any
+        };
     }
 
     // Register new user with default organization

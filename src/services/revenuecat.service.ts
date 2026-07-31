@@ -77,7 +77,11 @@ export const handleWebhook = async (body: RevenueCatWebhookBody): Promise<void> 
         // 2. Try if the ID is a user ID
         const user = await User.findById(appUserId) || await User.findById(originalAppUserId);
         if (user) {
-            organizationId = user.organizationId;
+            const orgMembership = require('../models/OrganizationMembership').default;
+            const membership = await orgMembership.findOne({ userId: user._id, status: 'active' });
+            if (membership) {
+                organizationId = membership.organizationId;
+            }
         }
     }
 

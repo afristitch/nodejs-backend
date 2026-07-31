@@ -15,6 +15,13 @@ router.use(organizationMiddleware);
 router.use(subscriptionMiddleware);
 
 /**
+ * @route   DELETE /api/v1/users/memberships/exit
+ * @desc    Exit an organization (Self)
+ * @access  Private
+ */
+router.delete('/memberships/exit', userController.exitOrganization);
+
+/**
  * @route   POST /api/v1/users
  * @desc    Create a new user (ADMIN only)
  * @access  Private (ORG_ADMIN)
@@ -25,7 +32,7 @@ router.post(
     [
         body('name').trim().notEmpty().withMessage('Name is required'),
         body('email').isEmail().withMessage('Valid email is required'),
-        body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+        body('password').optional().isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
         body('role').isIn(['ORG_ADMIN', 'STAFF']).withMessage('Role must be ORG_ADMIN or STAFF'),
         validate,
     ],

@@ -149,9 +149,9 @@ const organizationSchema = new Schema<IOrganization>(
 // Indexes
 organizationSchema.index({ createdBy: 1 });
 
-// Virtual for users belonging to this organization
-organizationSchema.virtual('users', {
-  ref: 'User',
+// Virtual for memberships belonging to this organization
+organizationSchema.virtual('memberships', {
+  ref: 'OrganizationMembership',
   localField: '_id',
   foreignField: 'organizationId',
 });

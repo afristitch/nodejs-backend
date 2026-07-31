@@ -39,7 +39,7 @@ export const getClients = async (req: AuthRequest, res: Response, next: NextFunc
         let organizationId = req.organizationId as string;
 
         // If user is SUPER_ADMIN, they can override organizationId via query param
-        if (req.user?.role === UserRole.SUPER_ADMIN && req.query.organizationId) {
+        if (req.membershipRole === UserRole.SUPER_ADMIN && req.query.organizationId) {
             organizationId = req.query.organizationId as string;
         }
 
