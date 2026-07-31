@@ -15,8 +15,8 @@ router.post(
     '/register',
     [
         // Organization validation
-        body('organization.name').trim().notEmpty().withMessage('Organization name is required'),
-        body('organization.email').isEmail().withMessage('Valid organization email is required'),
+        body('organization.name').optional().trim(),
+        body('organization.email').optional().isEmail().withMessage('Valid organization email is required'),
         body('organization.phone').optional().trim(),
 
         // User validation
