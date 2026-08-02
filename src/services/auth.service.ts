@@ -127,6 +127,7 @@ export const login = async (email: string, password: string): Promise<AuthRespon
             phone: (user as any).phone || '',
             subscriptionPlan: 'free',
             subscriptionStatus: 'ACTIVE',
+            createdBy: user._id,
         });
         await personalOrg.save();
 
