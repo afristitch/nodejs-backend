@@ -2,6 +2,7 @@ import express from 'express';
 import * as systemController from '../controllers/system.controller';
 import authMiddleware from '../middlewares/auth.middleware';
 import { requireSuperAdmin } from '../middlewares/role.middleware';
+import { organizationMiddleware } from '../middlewares/organization.middleware';
 
 const router = express.Router();
 
@@ -12,8 +13,9 @@ const router = express.Router();
  */
 router.get('/maintenance', systemController.getMaintenanceStatus);
 
-// Apply auth and admin middleware to remaining system routes
+// Apply auth, organization, and admin middleware to remaining system routes
 router.use(authMiddleware);
+router.use(organizationMiddleware);
 router.use(requireSuperAdmin);
 
 /**

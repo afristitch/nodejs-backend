@@ -2,7 +2,7 @@ import { Response, NextFunction } from 'express';
 import userService from '../services/user.service';
 import { successResponse, errorResponse } from '../utils/response';
 import { paginatedResponse, parsePagination } from '../utils/pagination';
-import { AuthRequest } from '../types';
+import { AuthRequest, UserRole } from '../types';
 
 /**
  * User Controller
@@ -34,7 +34,10 @@ export const createUser = async (req: AuthRequest, res: Response, next: NextFunc
  */
 export const getUsers = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        const organizationId = req.organizationId as string;
+        let organizationId: string | undefined = req.organizationId as string;
+        if (req.membershipRole === UserRole.SUPER_ADMIN) {
+            organizationId = undefined; // SuperAdmins get all users unless filtered in the service
+        }
         const pagination = parsePagination(req.query as any);
         const search = req.query.search as string || '';
         const filterOrganizationId = req.query.organizationId as string || '';

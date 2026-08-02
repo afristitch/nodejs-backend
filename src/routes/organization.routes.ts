@@ -11,6 +11,7 @@ const router = express.Router();
 
 // Apply auth and organization middleware to all routes
 router.use(authMiddleware);
+router.use(organizationMiddleware);
 
 /**
  * @route   GET /api/v1/organization/all
@@ -18,9 +19,6 @@ router.use(authMiddleware);
  * @access  Private (SUPER_ADMIN)
  */
 router.get('/all', requireSuperAdmin, organizationController.getAllOrganizations);
-
-// Routes below need organization isolation (for staff/admin)
-router.use(organizationMiddleware);
 
 router.get('/', organizationController.getOrganization);
 

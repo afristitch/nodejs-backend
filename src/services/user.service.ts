@@ -113,17 +113,20 @@ export const getUsers = async (
 ): Promise<{ users: any[]; total: number }> => {
     
     const orgId = filterOrganizationId || globalOrganizationId;
-    if (!orgId) throw new Error('Organization ID is required');
 
-    const membershipQuery: any = { organizationId: orgId };
-    if (role) {
-        membershipQuery.role = { $regex: `^${role}$`, $options: 'i' };
+    let userQuery: any = {};
+    let memberships: any[] = [];
+
+    if (orgId || role) {
+        const membershipQuery: any = {};
+        if (orgId) membershipQuery.organizationId = orgId;
+        if (role) membershipQuery.role = { $regex: `^${role}$`, $options: 'i' };
+
+        memberships = await OrganizationMembership.find(membershipQuery).lean();
+        const userIds = memberships.map(m => m.userId);
+        userQuery._id = { $in: userIds };
     }
 
-    let memberships = await OrganizationMembership.find(membershipQuery).lean();
-    const userIds = memberships.map(m => m.userId);
-
-    const userQuery: any = { _id: { $in: userIds } };
     if (search) {
         userQuery.$or = [
             { name: { $regex: search, $options: 'i' } },
@@ -142,9 +145,14 @@ export const getUsers = async (
         User.countDocuments(userQuery),
     ]);
 
+    if (!orgId && !role) {
+        memberships = await OrganizationMembership.find({ userId: { $in: users.map(u => u._id) } }).lean();
+    }
+
     // Map memberships onto users
     const mappedUsers = users.map(u => {
-        const m = memberships.find(mem => mem.userId === u._id);
+        const userMemberships = memberships.filter(mem => mem.userId === u._id);
+        const m = orgId ? userMemberships.find(mem => mem.organizationId === orgId) : (userMemberships.find(mem => mem.role === 'SUPER_ADMIN') || userMemberships[0]);
         return { ...u, role: m?.role, status: m?.status };
     });
 

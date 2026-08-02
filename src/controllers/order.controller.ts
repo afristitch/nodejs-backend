@@ -41,11 +41,11 @@ export const createOrder = async (req: AuthRequest, res: Response, next: NextFun
  */
 export const getOrders = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        let organizationId = req.organizationId as string;
+        let organizationId: string | undefined = req.organizationId as string;
 
-        // If user is SUPER_ADMIN, they can override organizationId via query param
-        if (req.membershipRole === UserRole.SUPER_ADMIN && req.query.organizationId) {
-            organizationId = req.query.organizationId as string;
+        // If user is SUPER_ADMIN, they get global data unless they specify an org
+        if (req.membershipRole === UserRole.SUPER_ADMIN) {
+            organizationId = req.query.organizationId ? (req.query.organizationId as string) : undefined;
         }
 
         // If user is STAFF, strictly scope orders to those assigned to them
@@ -198,11 +198,11 @@ export const deleteOrder = async (req: AuthRequest, res: Response, next: NextFun
  */
 export const getFinancialSummary = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        let organizationId = req.organizationId as string;
+        let organizationId: string | undefined = req.organizationId as string;
 
-        // If user is SUPER_ADMIN, they can override organizationId via query param
-        if (req.membershipRole === UserRole.SUPER_ADMIN && req.query.organizationId) {
-            organizationId = req.query.organizationId as string;
+        // If user is SUPER_ADMIN, they get global data unless they specify an org
+        if (req.membershipRole === UserRole.SUPER_ADMIN) {
+            organizationId = req.query.organizationId ? (req.query.organizationId as string) : undefined;
         }
 
         const summary = await orderService.getFinancialSummary(
@@ -222,11 +222,11 @@ export const getFinancialSummary = async (req: AuthRequest, res: Response, next:
  */
 export const getMonthlyRevenueStats = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        let organizationId = req.organizationId as string;
+        let organizationId: string | undefined = req.organizationId as string;
 
-        // If user is SUPER_ADMIN, they can override organizationId via query param
-        if (req.membershipRole === UserRole.SUPER_ADMIN && req.query.organizationId) {
-            organizationId = req.query.organizationId as string;
+        // If user is SUPER_ADMIN, they get global data unless they specify an org
+        if (req.membershipRole === UserRole.SUPER_ADMIN) {
+            organizationId = req.query.organizationId ? (req.query.organizationId as string) : undefined;
         }
 
         const stats = await orderService.getMonthlyRevenueStats(organizationId);

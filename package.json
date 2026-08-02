@@ -14,7 +14,8 @@
     "script:create-google-tester": "ts-node src/scripts/create-google-tester.ts",
     "script:send-beta-invitation": "ts-node src/scripts/send-beta-invitation.ts",
     "script:send-update": "ts-node src/scripts/send-update-email.ts",
-    "script:create-superadmin": "ts-node src/scripts/create-superadmin.ts"
+    "script:create-superadmin": "ts-node src/scripts/create-superadmin.ts",
+    "script:migrate-superadmins": "ts-node src/scripts/migrate-superadmins.ts"
   },
   "keywords": [
     "tailor",
