@@ -150,10 +150,25 @@ export const getUsers = async (
     }
 
     // Map memberships onto users
-    const mappedUsers = users.map(u => {
+    const mappedUsers = users.flatMap(u => {
         const userMemberships = memberships.filter(mem => mem.userId === u._id);
-        const m = orgId ? userMemberships.find(mem => mem.organizationId === orgId) : (userMemberships.find(mem => mem.role === 'SUPER_ADMIN') || userMemberships[0]);
-        return { ...u, role: m?.role, status: m?.status };
+        
+        if (userMemberships.length === 0) {
+            return [{ ...u, role: null, status: null, organizationId: null }];
+        }
+        
+        // If an orgId filter is applied, only return the membership for that org
+        if (orgId) {
+            const m = userMemberships.find(mem => mem.organizationId === orgId);
+            return [{ ...u, role: m?.role, status: m?.status, organizationId: m?.organizationId }];
+        }
+
+        return userMemberships.map(m => ({
+            ...u,
+            role: m.role,
+            status: m.status,
+            organizationId: m.organizationId
+        }));
     });
 
     return { users: mappedUsers, total };
