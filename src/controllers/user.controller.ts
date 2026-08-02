@@ -133,7 +133,7 @@ export const adminUpdateUser = async (req: AuthRequest, res: Response, next: Nex
         const id = req.params.id as string;
         const user = await userService.updateUser(
             id,
-            undefined,
+            req.body.organizationId,
             req.body
         );
 
@@ -154,7 +154,7 @@ export const adminUpdateUser = async (req: AuthRequest, res: Response, next: Nex
 export const adminDeleteUser = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const id = req.params.id as string;
-        await userService.deleteUser(id, undefined);
+        await userService.deleteAccount(id);
 
         successResponse(res, null, 'User deleted successfully');
     } catch (error: any) {
