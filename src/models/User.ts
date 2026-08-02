@@ -1,7 +1,7 @@
 import mongoose, { Schema } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
-import { IUser, UserRole } from '../types';
+import { IUser } from '../types';
 
 /**
  * User Schema
@@ -27,6 +27,11 @@ const userSchema = new Schema<IUser>(
             lowercase: true,
             match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email address'],
         },
+        phone: {
+            type: String,
+            trim: true,
+            default: null,
+        },
         password: {
             type: String,
             required: [
@@ -49,21 +54,6 @@ const userSchema = new Schema<IUser>(
             trim: true,
             sparse: true,
             unique: true,
-        },
-        role: {
-            type: String,
-            enum: Object.values(UserRole),
-            default: UserRole.STAFF,
-            required: true,
-        },
-        organizationId: {
-            type: String,
-            required: [
-                function (this: any) {
-                    return this.role !== UserRole.SUPER_ADMIN;
-                },
-                'Organization is required',
-            ],
         },
         isEmailVerified: {
             type: Boolean,
@@ -89,9 +79,7 @@ const userSchema = new Schema<IUser>(
     }
 );
 
-// Indexes
-userSchema.index({ organizationId: 1 });
-userSchema.index({ organizationId: 1, role: 1 });
+// Indexes (If any needed in future)
 
 // Hash password before saving
 userSchema.pre('save', async function (next) {
@@ -118,10 +106,7 @@ userSchema.methods.comparePassword = async function (
     }
 };
 
-// Instance method to check if user is admin
-userSchema.methods.isAdmin = function (): boolean {
-    return this.role === UserRole.ORG_ADMIN || this.role === UserRole.SUPER_ADMIN;
-};
+// Note: isAdmin() logic must now be handled at the membership level
 
 // Instance method to convert user to JSON (remove sensitive data)
 userSchema.methods.toJSON = function () {

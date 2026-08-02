@@ -7,6 +7,7 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 import User from '../models/User';
 import Client from '../models/Client';
+import OrganizationMembership from '../models/OrganizationMembership';
 import { v4 as uuidv4 } from 'uuid';
 
 const firstNames = ['Amina', 'Kwame', 'Chidi', 'Ngozi', 'Fatima', 'Oluwaseun', 'Zainab', 'Kofi', 'Adjoa', 'Tunde', 'Amara', 'Emeka', 'Chioma', 'Yusuf', 'Bola'];
@@ -36,7 +37,13 @@ const seedClients = async () => {
             process.exit(1);
         }
 
-        console.log(`Found user ${user.name} with organizationId ${user.organizationId}.`);
+        const membership = await OrganizationMembership.findOne({ userId: user._id });
+        if (!membership) {
+            console.error(`Membership for user with email ${email} not found.`);
+            process.exit(1);
+        }
+
+        console.log(`Found user ${user.name} with organizationId ${membership.organizationId}.`);
 
         const clients: any[] = [];
         for (let i = 0; i < 20; i++) {
@@ -47,14 +54,14 @@ const seedClients = async () => {
                 phone: getRandomPhone(),
                 email: `${name.toLowerCase().replace(' ', '.')}@example.com`,
                 notes: `Seeded dummy client ${i + 1}`,
-                organizationId: user.organizationId,
+                organizationId: membership.organizationId,
                 createdBy: user._id,
                 isDeleted: false
             });
         }
 
         await Client.insertMany(clients);
-        console.log(`Successfully seeded 20 clients for organization ${user.organizationId}.`);
+        console.log(`Successfully seeded 20 clients for organization ${membership.organizationId}.`);
 
         process.exit(0);
     } catch (error) {

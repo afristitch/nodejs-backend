@@ -19,7 +19,7 @@ export const createOrder = async (req: AuthRequest, res: Response, next: NextFun
         const userId = req.user?._id as string;
 
         // If user is STAFF, force assignedToId to their own ID
-        if (req.user?.role === UserRole.STAFF) {
+        if (req.membershipRole === UserRole.STAFF) {
             req.body.assignedToId = userId;
         }
 
@@ -44,13 +44,13 @@ export const getOrders = async (req: AuthRequest, res: Response, next: NextFunct
         let organizationId = req.organizationId as string;
 
         // If user is SUPER_ADMIN, they can override organizationId via query param
-        if (req.user?.role === UserRole.SUPER_ADMIN && req.query.organizationId) {
+        if (req.membershipRole === UserRole.SUPER_ADMIN && req.query.organizationId) {
             organizationId = req.query.organizationId as string;
         }
 
         // If user is STAFF, strictly scope orders to those assigned to them
-        if (req.user?.role === UserRole.STAFF) {
-            req.query.assignedToId = req.user._id;
+        if (req.membershipRole === UserRole.STAFF) {
+            req.query.assignedToId = req.user?._id as string;
         }
 
         const pagination = parsePagination(req.query as any);
@@ -201,7 +201,7 @@ export const getFinancialSummary = async (req: AuthRequest, res: Response, next:
         let organizationId = req.organizationId as string;
 
         // If user is SUPER_ADMIN, they can override organizationId via query param
-        if (req.user?.role === UserRole.SUPER_ADMIN && req.query.organizationId) {
+        if (req.membershipRole === UserRole.SUPER_ADMIN && req.query.organizationId) {
             organizationId = req.query.organizationId as string;
         }
 
@@ -225,7 +225,7 @@ export const getMonthlyRevenueStats = async (req: AuthRequest, res: Response, ne
         let organizationId = req.organizationId as string;
 
         // If user is SUPER_ADMIN, they can override organizationId via query param
-        if (req.user?.role === UserRole.SUPER_ADMIN && req.query.organizationId) {
+        if (req.membershipRole === UserRole.SUPER_ADMIN && req.query.organizationId) {
             organizationId = req.query.organizationId as string;
         }
 

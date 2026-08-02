@@ -5,8 +5,7 @@ import { IUser } from "../types";
 import User from '../models/User';
 
 
-export const getMyProfile = async (user: IUser) => {
-  const organizationId = user.organizationId;
+export const getMyProfile = async (user: IUser, organizationId?: string) => {
 
   // 1️⃣ Get organization
   let organization = null;
@@ -18,6 +17,7 @@ export const getMyProfile = async (user: IUser) => {
     return {
       user,
       organization: null,
+      memberships: [],
       summary: { totalOrders: 0, totalRevenue: 0 },
       weekly: { orders: [], totalRevenue: 0 },
       recentClients: [],
@@ -61,9 +61,17 @@ export const getMyProfile = async (user: IUser) => {
     .sort({ createdAt: -1 })
     .limit(5);
 
+  const OrganizationMembership = (await import('../models/OrganizationMembership')).default;
+  const memberships = await OrganizationMembership.find({ userId: user._id, status: 'active' }).lean();
+  const populatedMemberships = await Promise.all(memberships.map(async (m) => {
+      const org = await Organization.findById(m.organizationId).lean();
+      return { ...m, organization: org };
+  }));
+
   return {
     user, // already sanitized via toJSON
     organization,
+    memberships: populatedMemberships as any,
     summary,
     weekly: {
       orders: weeklyOrders,

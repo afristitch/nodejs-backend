@@ -162,3 +162,28 @@ export const adminDeleteUser = async (req: AuthRequest, res: Response, next: Nex
         next(error);
     }
 };
+
+/**
+ * Exit organization (Self)
+ * DELETE /api/v1/users/memberships/exit
+ */
+export const exitOrganization = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+        const organizationId = req.organizationId as string;
+        const userId = req.user?._id as string;
+        
+        await userService.exitOrganization(userId, organizationId);
+
+        successResponse(res, null, 'Successfully left the workspace');
+    } catch (error: any) {
+        if (error.message === 'User not found in this organization') {
+            errorResponse(res, error.message, 404);
+            return;
+        }
+        if (error.message.includes('only admin')) {
+            errorResponse(res, error.message, 400);
+            return;
+        }
+        next(error);
+    }
+};

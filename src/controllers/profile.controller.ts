@@ -18,7 +18,7 @@ export const getMyProfile = async (
       return res.status(403).json({ message: 'Unauthorized' });
     }
 
-    const result = await profileService.getMyProfile(req.user);
+    const result = await profileService.getMyProfile(req.user, req.organizationId);
     return successResponse(res, result, "Profile fetched successfully"); // add return
   } catch (error) {
     return next(error); // add return

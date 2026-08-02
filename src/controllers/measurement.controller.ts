@@ -157,7 +157,7 @@ export const createMeasurement = async (req: AuthRequest, res: Response, next: N
 export const getMeasurements = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         let organizationId = req.organizationId as string;
-        if (req.user?.role === UserRole.SUPER_ADMIN && req.query.organizationId) {
+        if (req.membershipRole === UserRole.SUPER_ADMIN && req.query.organizationId) {
             organizationId = req.query.organizationId as string;
         }
         const pagination = parsePagination(req.query as any);

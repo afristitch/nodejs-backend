@@ -220,3 +220,49 @@ export const sendUpdateEmail = async (
     console.error(`[Email] Error sending update email to ${email}:`, error);
   }
 };
+
+/**
+ * Send notification that user was added to an organization
+ */
+export const sendAddedToOrganizationEmail = async (
+  email: string,
+  name: string,
+  organizationName: string
+): Promise<void> => {
+  const loginUrl = `${process.env.FRONTEND_URL}/login`;
+
+  try {
+    if (process.env.NODE_ENV === 'test') return;
+
+    console.log(`[Email] Sending added to organization email to ${email}...`);
+
+    if (!process.env.RESEND_API_KEY && process.env.NODE_ENV === 'development') {
+      console.log('--- Added to Organization Simulation ---');
+      console.log(`To: ${email}`);
+      console.log(`Name: ${name}`);
+      console.log(`Org: ${organizationName}`);
+      console.log('----------------------------------------');
+      return;
+    }
+
+    const html = `
+      <div style="font-family: sans-serif; color: #333;">
+        <h2>Hello ${name},</h2>
+        <p>You have been added to the workspace <strong>${organizationName}</strong> on SewDigital.</p>
+        <p>Log in to your account to view your new workspace and start collaborating.</p>
+        <p><a href="${loginUrl}" style="background-color: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Log in to SewDigital</a></p>
+        <p>Best,<br>The SewDigital Team</p>
+      </div>
+    `;
+
+    await resend.emails.send({
+      from: fromEmail,
+      to: email,
+      subject: `You've been added to ${organizationName} on SewDigital`,
+      html,
+    });
+    console.log(`[Email] Added to organization email sent successfully to ${email}`);
+  } catch (error) {
+    console.error(`[Email] Error sending added to org email to ${email}:`, error);
+  }
+};

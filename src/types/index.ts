@@ -127,7 +127,18 @@ export interface IOrganization {
     updatedAt: Date;
 }
 
-
+/**
+ * Organization Membership Interface
+ */
+export interface IOrganizationMembership {
+    _id: string; // UUID
+    userId: string; // UUID
+    organizationId: string; // UUID
+    role: UserRole;
+    status: 'active' | 'pending_invite' | 'suspended';
+    createdAt: Date;
+    updatedAt: Date;
+}
 
 /**
  * User Interface
@@ -136,11 +147,10 @@ export interface IUser {
     _id: string; // UUID
     name: string;
     email: string;
+    phone?: string;
     password?: string;
     googleId?: string;
     appleId?: string;
-    role: UserRole;
-    organizationId?: string; // UUID
     isEmailVerified: boolean;
     photoUrl?: string;
     passwordResetToken?: string;
@@ -291,6 +301,7 @@ export interface IQuoteRequest {
 export interface AuthRequest extends Request {
     user?: IUser;
     organizationId?: string; // UUID
+    membershipRole?: UserRole; // Populated by organization middleware
 }
 
 /**
@@ -345,7 +356,8 @@ export interface AuthResponse {
     user: IUser;
     accessToken: string;
     refreshToken: string;
-    organization?: IOrganization;
+    memberships?: Array<IOrganizationMembership & { organization?: IOrganization }>;
+    organization?: IOrganization; // Legacy fallback, to be removed eventually
 }
 
 /**

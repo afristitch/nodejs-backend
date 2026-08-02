@@ -3,6 +3,7 @@ import systemService from '../services/system.service';
 import { errorResponse } from '../utils/response';
 import { verifyAccessToken } from '../utils/jwt';
 import User from '../models/User';
+import OrganizationMembership from '../models/OrganizationMembership';
 import { AuthRequest, UserRole } from '../types';
 import logger from '../utils/logger';
 
@@ -40,9 +41,12 @@ const maintenanceMiddleware = async (req: AuthRequest, res: Response, next: Next
                 const decoded = verifyAccessToken(token);
                 const user = await User.findById(decoded.userId);
 
-                if (user && user.role === UserRole.SUPER_ADMIN) {
-                    logger.info('SuperAdmin bypassing maintenance mode', { userId: user._id, url: req.originalUrl });
-                    return next();
+                if (user) {
+                    const memberships = await OrganizationMembership.find({ userId: user._id, role: UserRole.SUPER_ADMIN });
+                    if (memberships.length > 0) {
+                        logger.info('SuperAdmin bypassing maintenance mode', { userId: user._id, url: req.originalUrl });
+                        return next();
+                    }
                 }
             } catch (authError) {
                 // Ignore auth errors here, just continue to return maintenance response

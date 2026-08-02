@@ -38,7 +38,6 @@ const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunctio
         }
 
         req.user = user as any;
-        req.organizationId = user.organizationId;
 
         next();
     } catch (error: any) {
