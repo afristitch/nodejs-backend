@@ -174,7 +174,7 @@ export const createMeasurement = async (
  * Get all measurements in an organization
  */
 export const getMeasurements = async (
-    organizationId: string,
+    organizationId: string | undefined,
     options: PaginationOptions
 ): Promise<{ measurements: IMeasurement[]; total: number }> => {
     const query: any = organizationId ? { organizationId } : {};
