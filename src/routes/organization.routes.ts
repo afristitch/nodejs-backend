@@ -42,6 +42,8 @@ router.put(
         body('name').optional().trim().notEmpty().withMessage('Name cannot be empty'),
         body('email').optional({ values: 'falsy' }).isEmail().withMessage('Valid email is required'),
         body('phone').optional({ values: 'falsy' }).trim().notEmpty().withMessage('Phone cannot be empty'),
+        body('currency').optional().trim().isLength({ max: 3, min: 3 }).withMessage('Currency must be a three letter iso format'),
+        body('country').optional().trim().isLength({ min:2, max:2 }).withMessage('Country must be a 2-letter ISO code'),
         validate,
     ],
     organizationController.updateOrganization

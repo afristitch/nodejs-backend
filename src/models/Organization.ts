@@ -44,6 +44,16 @@ const organizationSchema = new Schema<IOrganization>(
       trim: true,
       set: (v: string) => (v === '' ? null : v),
     },
+    country: {
+      type: String,
+      default: null,
+      uppercase: true,
+    },
+    currency: {
+      type: String,
+      default: null,
+      uppercase: true,
+    },
     address: {
       type: String,
       trim: true,
@@ -72,6 +82,11 @@ const organizationSchema = new Schema<IOrganization>(
       type: Date,
       default: null,
     },
+    subscriptionRemindersSent: {
+      fiveDays: { type: Date, default: null },
+      oneDay: { type: Date, default: null },
+      expired: { type: Date, default: null },
+    },
     revenuecatAppUserId: {
       type: String,
       default: null,
@@ -80,7 +95,7 @@ const organizationSchema = new Schema<IOrganization>(
       type: Boolean,
       default: false,
     },
-    
+
     // Discovery fields
     isPublic: {
       type: Boolean,
