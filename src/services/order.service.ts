@@ -34,20 +34,6 @@ export const createOrder = async (
 
     await order.save();
 
-    // Trigger notification
-    try {
-        const notificationService = require('./notification.service').default;
-        await notificationService.sendToUser(userId, {
-            title: 'New Order Created',
-            message: `Order #${orderNumber} has been successfully created.`,
-            type: 'ORDER_CREATED',
-            data: { orderId: order._id.toString() },
-        });
-    } catch (error) {
-        // Don't fail the request if notification fails
-        console.error('Failed to send order creation notification', error);
-    }
-
     return order;
 };
 
