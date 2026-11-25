@@ -196,6 +196,16 @@ const handleActivation = async (organizationId: string, event: RevenueCatEvent):
 
     updateData.subscriptionStatus = status;
     updateData.subscriptionEndsAt = expirationDate;
+    updateData.subscriptionRemindersSent = {
+        fiveDays: null,
+        oneDay: null,
+        expired: null,
+        threeDaysAfter: null,
+        oneWeekAfter: null,
+        twoWeeksAfter: null,
+        threeWeeksAfter: null,
+        oneMonthAfter: null,
+    };
 
     if (plan) {
         updateData.planId = plan._id;

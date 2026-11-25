@@ -1,9 +1,14 @@
 import apn from 'node-apn';
 import path from 'path';
 import dotenv from 'dotenv';
+import { EventEmitter } from 'events';
 import logger from '../utils/logger';
 
 dotenv.config();
+
+// node-apn uses an internal http2 Connection that adds a 'wakeup' listener per concurrent notification stream.
+// Increasing defaultMaxListeners prevents the benign MaxListenersExceededWarning when multiple notifications are processed.
+EventEmitter.defaultMaxListeners = 100;
 
 const apnsConfig = {
     token: {

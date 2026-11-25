@@ -94,6 +94,11 @@ export interface IOrganization {
         fiveDays?: Date;
         oneDay?: Date;
         expired?: Date;
+        threeDaysAfter?: Date;
+        oneWeekAfter?: Date;
+        twoWeeksAfter?: Date;
+        threeWeeksAfter?: Date;
+        oneMonthAfter?: Date;
     };
     revenuecatAppUserId?: string;
     isSetupComplete?: boolean;

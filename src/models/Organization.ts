@@ -86,6 +86,11 @@ const organizationSchema = new Schema<IOrganization>(
       fiveDays: { type: Date, default: null },
       oneDay: { type: Date, default: null },
       expired: { type: Date, default: null },
+      threeDaysAfter: { type: Date, default: null },
+      oneWeekAfter: { type: Date, default: null },
+      twoWeeksAfter: { type: Date, default: null },
+      threeWeeksAfter: { type: Date, default: null },
+      oneMonthAfter: { type: Date, default: null },
     },
     revenuecatAppUserId: {
       type: String,

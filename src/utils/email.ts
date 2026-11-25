@@ -361,3 +361,74 @@ export const sendSubscriptionExpiredEmail = async (
     console.error(`[Email] Error sending subscription expired email to ${email}:`, error);
   }
 };
+
+export interface StoryBrandEmailOptions {
+  email: string;
+  name: string;
+  orgName: string;
+  subject: string;
+  headline: string;
+  leadParagraph: string;
+  alertBoxTitle?: string;
+  alertBoxMessage?: string;
+  isDanger?: boolean;
+  ctaText: string;
+  renewUrl?: string;
+}
+
+/**
+ * Send StoryBrand-crafted subscription notification email
+ */
+export const sendSubscriptionMilestoneEmail = async (options: StoryBrandEmailOptions): Promise<void> => {
+  const {
+    email,
+    name,
+    orgName,
+    subject,
+    headline,
+    leadParagraph,
+    alertBoxTitle,
+    alertBoxMessage,
+    isDanger = false,
+    ctaText,
+    renewUrl = `${process.env.FRONTEND_URL || 'https://sewdigital.app'}/upgrade`,
+  } = options;
+
+  try {
+    if (process.env.NODE_ENV === 'test') return;
+
+    console.log(`[Email] Sending StoryBrand subscription milestone email to ${email} (Subject: ${subject})...`);
+
+    if (!process.env.RESEND_API_KEY && process.env.NODE_ENV === 'development') {
+      console.log('--- Subscription Milestone Email Simulation ---');
+      console.log(`To: ${email}`);
+      console.log(`Subject: ${subject}`);
+      console.log(`Headline: ${headline}`);
+      console.log(`CTA: ${ctaText} -> ${renewUrl}`);
+      console.log('----------------------------------------------');
+      return;
+    }
+
+    const html = renderTemplate('subscription-milestone', {
+      name,
+      orgName,
+      headline,
+      leadParagraph,
+      alertBoxTitle,
+      alertBoxMessage,
+      isDanger,
+      ctaText,
+      renewUrl,
+    });
+
+    await resend.emails.send({
+      from: fromEmail,
+      to: email,
+      subject,
+      html,
+    });
+    console.log(`[Email] StoryBrand subscription email sent successfully to ${email}`);
+  } catch (error) {
+    console.error(`[Email] Error sending StoryBrand subscription email to ${email}:`, error);
+  }
+};
