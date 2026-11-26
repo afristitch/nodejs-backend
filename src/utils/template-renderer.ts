@@ -43,12 +43,18 @@ export const renderTemplate = (templateName: string, data: any): string => {
         const templateSource = fs.readFileSync(templatePath, 'utf-8');
         const template = Handlebars.compile(templateSource);
 
-        // Inject Logo URL from environment
-        const logoUrl = process.env.LOGO_URL || 'https://via.placeholder.com/120x40?text=SewDigital';
+        // Inject Logo URLs from environment
+        const logoUrl =
+            process.env.LOGO_URL ||
+            'https://res.cloudinary.com/dewxjdmd2/image/upload/v1795690192/sewdigital/brand/stitch-logo-bottle-green.png';
+        const logoWhiteUrl =
+            process.env.LOGO_WHITE_URL ||
+            'https://res.cloudinary.com/dewxjdmd2/image/upload/v1795690191/sewdigital/brand/stitch-logo-white.png';
 
         return template({
             ...data,
             logoUrl,
+            logoWhiteUrl,
         });
     } catch (error) {
         console.error(`[TemplateRenderer] Error rendering template ${templateName}:`, error);
