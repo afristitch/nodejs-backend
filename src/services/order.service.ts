@@ -1,4 +1,5 @@
 import Order from '../models/Order';
+import Client from '../models/Client';
 import { IOrder, PaginationOptions } from '../types';
 
 /**
@@ -34,20 +35,6 @@ export const createOrder = async (
 
     await order.save();
 
-    // Trigger notification
-    try {
-        const notificationService = require('./notification.service').default;
-        await notificationService.sendToUser(userId, {
-            title: 'New Order Created',
-            message: `Order #${orderNumber} has been successfully created.`,
-            type: 'ORDER_CREATED',
-            data: { orderId: order._id.toString() },
-        });
-    } catch (error) {
-        // Don't fail the request if notification fails
-        console.error('Failed to send order creation notification', error);
-    }
-
     return order;
 };
 
@@ -67,6 +54,26 @@ export const getOrders = async (
     if (filters.paymentStatus) query.paymentStatus = filters.paymentStatus;
     if (filters.orderNumber) query.orderNumber = { $regex: filters.orderNumber, $options: 'i' };
     if (filters.assignedToId) query.assignedToId = filters.assignedToId;
+
+    if (filters.search && String(filters.search).trim()) {
+        const regex = new RegExp(String(filters.search).trim(), 'i');
+        const clientFilter: any = organizationId
+            ? { organizationId, $or: [{ name: regex }, { phone: regex }] }
+            : { $or: [{ name: regex }, { phone: regex }] };
+        const matchingClients = await Client.find(clientFilter).select('_id').lean();
+        const clientIds = matchingClients.map((c: any) => c._id);
+
+        const orConditions: any[] = [
+            { orderNumber: regex },
+            { notes: regex },
+            { styleNotes: regex },
+            { clothSize: regex },
+        ];
+        if (clientIds.length > 0) {
+            orConditions.push({ clientId: { $in: clientIds } });
+        }
+        query.$or = orConditions;
+    }
     
     // Maintain backward compatibility: Only paginate if explicitly requested
     const shouldPaginate = !!(filters.page && filters.limit);

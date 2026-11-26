@@ -132,6 +132,16 @@ const updateSubscriptionStatus = async (organizationId: string, paymentData: any
         subscriptionStatus: SubscriptionStatus.ACTIVE,
         subscriptionPlan: 'premium',
         subscriptionEndsAt,
+        subscriptionRemindersSent: {
+            fiveDays: null,
+            oneDay: null,
+            expired: null,
+            threeDaysAfter: null,
+            oneWeekAfter: null,
+            twoWeeksAfter: null,
+            threeWeeksAfter: null,
+            oneMonthAfter: null,
+        },
     };
 
     // Perform Update

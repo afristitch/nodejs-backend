@@ -1,3 +1,4 @@
+import { countries } from 'countries-list';
 import User from '../models/User';
 import Organization from '../models/Organization';
 import OrganizationMembership from '../models/OrganizationMembership';
@@ -35,6 +36,16 @@ export const registerOrganization = async (orgData: any, userData: any, referral
         }
     }
 
+    const country = orgData?.country ? String(orgData.country).trim().toUpperCase() : undefined;
+    let currency = orgData?.currency ? String(orgData.currency).trim().toUpperCase() : undefined;
+
+    if (!currency && country) {
+        const countryInfo = (countries as any)[country];
+        if (countryInfo && countryInfo.currency && countryInfo.currency.length > 0) {
+            currency = countryInfo.currency[0];
+        }
+    }
+
     // Create admin user first
     const user = new User({
         ...userData,
@@ -57,6 +68,8 @@ export const registerOrganization = async (orgData: any, userData: any, referral
         ...orgData,
         name: orgName,
         email: orgEmail,
+        country,
+        currency,
         slug: generateSlug(orgName),
         createdBy: user._id,
         subscriptionStatus: 'active',
@@ -120,7 +133,7 @@ export const login = async (email: string, password: string): Promise<AuthRespon
 
     if (!hasAdminWorkspace) {
         const Organization = (await import('../models/Organization')).default;
-        
+
         const personalOrg = new Organization({
             name: `${user.name.split(' ')[0]}'s Workspace`,
             email: user.email,
@@ -138,7 +151,7 @@ export const login = async (email: string, password: string): Promise<AuthRespon
             status: 'active'
         });
         await membership.save();
-        
+
         // Add to memberships array
         memberships.push(membership.toObject() as any);
     }
@@ -371,12 +384,12 @@ const getOrCreateOAuthUser = async (
         if (updated) await user.save();
 
         let memberships = await OrganizationMembership.find({ userId: user._id, status: 'active' }).lean();
-        
+
         const hasAdminWorkspace = memberships.some(m => m.role === 'ORG_ADMIN');
 
         if (!hasAdminWorkspace) {
             const Organization = (await import('../models/Organization')).default;
-            
+
             const personalOrg = new Organization({
                 name: `${user.name.split(' ')[0]}'s Workspace`,
                 email: user.email,
@@ -393,22 +406,22 @@ const getOrCreateOAuthUser = async (
                 status: 'active'
             });
             await membership.save();
-            
+
             memberships.push(membership.toObject() as any);
         }
 
         const accessToken = generateAccessToken({ userId: user._id });
         const refreshToken = generateRefreshToken({ userId: user._id });
-        
+
         const populatedMemberships = await Promise.all(memberships.map(async (m) => {
             const org = await Organization.findById(m.organizationId).lean();
             return { ...m, organization: org };
         }));
 
-        return { 
-            user, 
-            accessToken, 
-            refreshToken, 
+        return {
+            user,
+            accessToken,
+            refreshToken,
             memberships: populatedMemberships as any,
             organization: populatedMemberships[0]?.organization as any
         };

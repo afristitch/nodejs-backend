@@ -40,6 +40,5 @@ const deviceTokenSchema = new Schema<IDeviceToken>(
 
 // Indexes
 deviceTokenSchema.index({ userId: 1 });
-deviceTokenSchema.index({ token: 1 });
 
 export default mongoose.model<IDeviceToken>('DeviceToken', deviceTokenSchema);

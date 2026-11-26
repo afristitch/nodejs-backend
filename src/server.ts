@@ -22,6 +22,10 @@ const startServer = async () => {
         const measurementService = require('./services/measurement.service').default;
         await measurementService.seedGlobalTemplates();
 
+        // Start background subscription expiration scheduler
+        const SubscriptionCheckService = require('./services/subscription-check.service').default;
+        SubscriptionCheckService.startScheduler();
+
 
         // Start listening
         const server = app.listen(PORT, () => {

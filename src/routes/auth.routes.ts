@@ -18,6 +18,8 @@ router.post(
         body('organization.name').optional().trim(),
         body('organization.email').optional().isEmail().withMessage('Valid organization email is required'),
         body('organization.phone').optional().trim(),
+        body('organization.country').optional().trim().isLength({ min: 2, max: 2 }).toUpperCase(),
+        body('organization.currency').optional().trim().isLength({ min:3, max:3 }).toUpperCase(),
 
         // User validation
         body('user.name').trim().notEmpty().withMessage('User name is required'),

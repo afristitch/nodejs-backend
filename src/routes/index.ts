@@ -20,6 +20,7 @@ import quoteRoutes from './quote.routes';
 import groupRoutes from './group.routes';
 import avatarRoutes from './avatar.routes';
 import proformaRoutes from './proforma.routes';
+import inventoryRoutes from './inventory.routes';
 
 
 const router = express.Router();
@@ -88,6 +89,7 @@ router.use('/quotes', quoteRoutes);
 router.use('/groups', groupRoutes);
 router.use('/avatars', avatarRoutes);
 router.use('/proformas', proformaRoutes);
+router.use('/inventory', inventoryRoutes);
 
 
 export default router;

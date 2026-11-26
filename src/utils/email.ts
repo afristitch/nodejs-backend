@@ -266,3 +266,169 @@ export const sendAddedToOrganizationEmail = async (
     console.error(`[Email] Error sending added to org email to ${email}:`, error);
   }
 };
+
+/**
+ * Send subscription expiring reminder email (5 days or 1 day before)
+ */
+export const sendSubscriptionExpiringEmail = async (
+  email: string,
+  name: string,
+  daysLeft: number,
+  subscriptionEndsAt: Date,
+  orgName: string
+): Promise<void> => {
+  const renewUrl = `${process.env.FRONTEND_URL || 'https://sewdigital.app'}/upgrade`;
+  const expiryText = daysLeft === 1 ? 'tomorrow' : `in ${daysLeft} days`;
+  const formattedDate = new Date(subscriptionEndsAt).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+  try {
+    if (process.env.NODE_ENV === 'test') return;
+
+    console.log(`[Email] Sending subscription expiring email (${daysLeft}d) to ${email}...`);
+
+    if (!process.env.RESEND_API_KEY && process.env.NODE_ENV === 'development') {
+      console.log('--- Subscription Expiring Email Simulation ---');
+      console.log(`To: ${email}`);
+      console.log(`Days Left: ${daysLeft}`);
+      console.log(`Expiry: ${formattedDate}`);
+      console.log('----------------------------------------------');
+      return;
+    }
+
+    const html = renderTemplate('subscription-expiring', {
+      name,
+      orgName,
+      expiryText,
+      expiryDate: formattedDate,
+      renewUrl,
+    });
+
+    await resend.emails.send({
+      from: fromEmail,
+      to: email,
+      subject: daysLeft === 1
+        ? `⚠️ Urgent: Your SewDigital subscription expires tomorrow`
+        : `Reminder: Your SewDigital subscription expires in ${daysLeft} days`,
+      html,
+    });
+    console.log(`[Email] Subscription expiring email sent successfully to ${email}`);
+  } catch (error) {
+    console.error(`[Email] Error sending subscription expiring email to ${email}:`, error);
+  }
+};
+
+/**
+ * Send subscription expired email (day of expiry)
+ */
+export const sendSubscriptionExpiredEmail = async (
+  email: string,
+  name: string,
+  orgName: string
+): Promise<void> => {
+  const renewUrl = `${process.env.FRONTEND_URL || 'https://sewdigital.app'}/upgrade`;
+
+  try {
+    if (process.env.NODE_ENV === 'test') return;
+
+    console.log(`[Email] Sending subscription expired email to ${email}...`);
+
+    if (!process.env.RESEND_API_KEY && process.env.NODE_ENV === 'development') {
+      console.log('--- Subscription Expired Email Simulation ---');
+      console.log(`To: ${email}`);
+      console.log(`Org: ${orgName}`);
+      console.log('--------------------------------------------');
+      return;
+    }
+
+    const html = renderTemplate('subscription-expired', {
+      name,
+      orgName,
+      renewUrl,
+    });
+
+    await resend.emails.send({
+      from: fromEmail,
+      to: email,
+      subject: `Your SewDigital subscription has expired today`,
+      html,
+    });
+    console.log(`[Email] Subscription expired email sent successfully to ${email}`);
+  } catch (error) {
+    console.error(`[Email] Error sending subscription expired email to ${email}:`, error);
+  }
+};
+
+export interface StoryBrandEmailOptions {
+  email: string;
+  name: string;
+  orgName: string;
+  subject: string;
+  headline: string;
+  leadParagraph: string;
+  alertBoxTitle?: string;
+  alertBoxMessage?: string;
+  isDanger?: boolean;
+  ctaText: string;
+  renewUrl?: string;
+}
+
+/**
+ * Send StoryBrand-crafted subscription notification email
+ */
+export const sendSubscriptionMilestoneEmail = async (options: StoryBrandEmailOptions): Promise<void> => {
+  const {
+    email,
+    name,
+    orgName,
+    subject,
+    headline,
+    leadParagraph,
+    alertBoxTitle,
+    alertBoxMessage,
+    isDanger = false,
+    ctaText,
+    renewUrl = `${process.env.FRONTEND_URL || 'https://sewdigital.app'}/upgrade`,
+  } = options;
+
+  try {
+    if (process.env.NODE_ENV === 'test') return;
+
+    console.log(`[Email] Sending StoryBrand subscription milestone email to ${email} (Subject: ${subject})...`);
+
+    if (!process.env.RESEND_API_KEY && process.env.NODE_ENV === 'development') {
+      console.log('--- Subscription Milestone Email Simulation ---');
+      console.log(`To: ${email}`);
+      console.log(`Subject: ${subject}`);
+      console.log(`Headline: ${headline}`);
+      console.log(`CTA: ${ctaText} -> ${renewUrl}`);
+      console.log('----------------------------------------------');
+      return;
+    }
+
+    const html = renderTemplate('subscription-milestone', {
+      name,
+      orgName,
+      headline,
+      leadParagraph,
+      alertBoxTitle,
+      alertBoxMessage,
+      isDanger,
+      ctaText,
+      renewUrl,
+    });
+
+    await resend.emails.send({
+      from: fromEmail,
+      to: email,
+      subject,
+      html,
+    });
+    console.log(`[Email] StoryBrand subscription email sent successfully to ${email}`);
+  } catch (error) {
+    console.error(`[Email] Error sending StoryBrand subscription email to ${email}:`, error);
+  }
+};

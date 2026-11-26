@@ -77,7 +77,6 @@ const subscriptionPaymentSchema = new Schema<ISubscriptionPayment>(
 
 // Indexes
 subscriptionPaymentSchema.index({ organizationId: 1 });
-subscriptionPaymentSchema.index({ reference: 1 });
 subscriptionPaymentSchema.index({ createdAt: -1 });
 
 export default mongoose.model<ISubscriptionPayment>('SubscriptionPayment', subscriptionPaymentSchema);

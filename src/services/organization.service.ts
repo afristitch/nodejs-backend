@@ -1,3 +1,4 @@
+import { countries } from 'countries-list';
 import Organization from '../models/Organization';
 import { IOrganization, PaginationOptions } from '../types';
 
@@ -29,6 +30,19 @@ export const updateOrganization = async (
     // If updating org details, mark setup as complete
     const updatedData = { ...updateData, isSetupComplete: true };
 
+    if (updatedData.country) {
+        updatedData.country = String(updatedData.country).trim().toUpperCase();
+        if (!updatedData.currency) {
+            const countryInfo = (countries as any)[updatedData.country];
+            if (countryInfo && countryInfo.currency && countryInfo.currency.length > 0) {
+                updatedData.currency = countryInfo.currency[0];
+            }
+        }
+    }
+
+    if (updatedData.currency) {
+        updatedData.currency = String(updatedData.currency).trim().toUpperCase();
+    }
     const organization = await Organization.findByIdAndUpdate(
         id,
         { $set: updatedData },
@@ -55,7 +69,7 @@ export const getOrganizations = async (
     if (search) {
         query.name = { $regex: search, $options: 'i' };
     }
-    
+
     if (status) {
         query.subscriptionStatus = { $regex: `^${status}$`, $options: 'i' };
     }

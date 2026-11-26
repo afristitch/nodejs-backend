@@ -82,15 +82,27 @@ export interface IOrganization {
     logoUrl?: string;
     email: string;
     phone?: string;
+    country?: string;
+    currency?: string;
     address?: string;
     createdBy: string; // UUID
     subscriptionPlan: string; // Reference to Plan ID or Plan Name
     planId?: string; // UUID reference to Plan model
     subscriptionStatus: SubscriptionStatus;
     subscriptionEndsAt?: Date;
+    subscriptionRemindersSent?: {
+        fiveDays?: Date;
+        oneDay?: Date;
+        expired?: Date;
+        threeDaysAfter?: Date;
+        oneWeekAfter?: Date;
+        twoWeeksAfter?: Date;
+        threeWeeksAfter?: Date;
+        oneMonthAfter?: Date;
+    };
     revenuecatAppUserId?: string;
     isSetupComplete?: boolean;
-    
+
     // Discovery fields
     isPublic?: boolean;
     slug?: string;
@@ -122,7 +134,7 @@ export interface IOrganization {
     };
     latitude?: number;
     longitude?: number;
-    
+
     createdAt: Date;
     updatedAt: Date;
 }
