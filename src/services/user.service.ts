@@ -154,7 +154,7 @@ export const getUsers = async (
     );
     const orgs = orgIds.length
         ? await Organization.find({ _id: { $in: orgIds } })
-            .select('name subscriptionPlan subscriptionStatus subscriptionEndsAt')
+            .select('name phone subscriptionPlan subscriptionStatus subscriptionEndsAt')
             .lean()
         : [];
     const orgMap = new Map(orgs.map((o: any) => [String(o._id), o]));

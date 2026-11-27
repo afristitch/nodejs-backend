@@ -432,3 +432,76 @@ export const sendSubscriptionMilestoneEmail = async (options: StoryBrandEmailOpt
     console.error(`[Email] Error sending StoryBrand subscription email to ${email}:`, error);
   }
 };
+
+function escapeHtml(input: string): string {
+  return input
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
+ * Render the custom admin broadcast email using the shared backend email template
+ */
+export const renderCustomAdminEmailHtml = (
+  subject: string,
+  message: string,
+  recipientName?: string
+): string => {
+  const safeName = escapeHtml(recipientName || 'there');
+  const safeSubject = escapeHtml(subject || 'Platform Announcement');
+  const safeBody = escapeHtml(message || 'Your message will appear here.').replace(
+    /\r?\n/g,
+    '<br />'
+  );
+
+  return renderTemplate('admin-broadcast', {
+    name: safeName,
+    subject: safeSubject,
+    bodyHtml: safeBody,
+  });
+};
+
+/**
+ * Send a custom announcement/message email from the Monitoring Console
+ */
+export const sendCustomAdminEmail = async (
+  email: string,
+  subject: string,
+  message: string,
+  recipientName?: string
+): Promise<boolean> => {
+  try {
+    if (process.env.NODE_ENV === 'test') return true;
+
+    if (!process.env.RESEND_API_KEY && process.env.NODE_ENV === 'development') {
+      console.log('--- Custom Admin Email Simulation ---');
+      console.log(`To: ${email}`);
+      console.log(`Subject: ${subject}`);
+      console.log(`Message: ${message}`);
+      console.log('-------------------------------------');
+      return true;
+    }
+
+    const html = renderCustomAdminEmailHtml(subject, message, recipientName);
+
+    const { error: resendError } = await resend.emails.send({
+      from: fromEmail,
+      to: email,
+      subject,
+      html,
+    });
+
+    if (resendError) {
+      console.error(`[Email] Resend error for ${email}:`, resendError);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error(`[Email] Error sending custom admin email to ${email}:`, error);
+    return false;
+  }
+};

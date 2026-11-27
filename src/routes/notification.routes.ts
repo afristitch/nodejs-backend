@@ -2,6 +2,7 @@ import express from 'express';
 import { body } from 'express-validator';
 import * as notificationController from '../controllers/notification.controller';
 import authMiddleware from '../middlewares/auth.middleware';
+import { requireSuperAdmin } from '../middlewares/role.middleware';
 import validate from '../middlewares/validate.middleware';
 
 const router = express.Router();
@@ -51,5 +52,39 @@ router.patch('/read-all', notificationController.markAllAsRead);
  * @access  Private
  */
 router.patch('/:id/read', notificationController.markAsRead);
+
+/**
+ * @route   POST /api/v1/notifications/admin/preview
+ * @desc    Preview rendered email template HTML (Super Admin)
+ * @access  Private (SUPER_ADMIN)
+ */
+router.post(
+    '/admin/preview',
+    requireSuperAdmin,
+    notificationController.previewAdminNotification
+);
+
+/**
+ * @route   POST /api/v1/notifications/admin/send
+ * @desc    Send push notifications and/or emails to business admins (Super Admin)
+ * @access  Private (SUPER_ADMIN)
+ */
+router.post(
+    '/admin/send',
+    requireSuperAdmin,
+    [
+        body('title').trim().notEmpty().withMessage('Title is required'),
+        body('message').trim().notEmpty().withMessage('Message is required'),
+        body('audience')
+            .optional()
+            .isIn(['all_admins', 'pro_admins', 'free_admins', 'single'])
+            .withMessage('Invalid audience'),
+        body('channels')
+            .isArray({ min: 1 })
+            .withMessage('At least one channel is required'),
+    ],
+    validate,
+    notificationController.sendAdminNotification
+);
 
 export default router;

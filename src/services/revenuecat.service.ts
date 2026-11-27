@@ -300,12 +300,28 @@ const handleCancellation = async (organizationId: string, event: RevenueCatEvent
  * Mark subscription as expired (no more access)
  */
 const handleExpiration = async (organizationId: string, event: RevenueCatEvent): Promise<void> => {
+    const existingOrg = await Organization.findById(organizationId);
+    if (!existingOrg) {
+        console.error(`[RevenueCat] Organization not found: ${organizationId}`);
+        return;
+    }
+
+    // Preserve manual/promotional extensions when subscriptionEndsAt is still in the future
+    if (
+        existingOrg.subscriptionEndsAt &&
+        new Date(existingOrg.subscriptionEndsAt).getTime() > Date.now() + 60 * 60 * 1000
+    ) {
+        console.log(
+            `[RevenueCat] Skipping EXPIRATION for org ${organizationId} — active until ${existingOrg.subscriptionEndsAt.toISOString()}`
+        );
+        return;
+    }
+
     await Organization.findByIdAndUpdate(organizationId, {
         subscriptionStatus: SubscriptionStatus.EXPIRED,
     });
 
-    // We need the organization to get the owner
-    const organization = await Organization.findById(organizationId);
+    const organization = existingOrg;
     if (organization) {
         // Trigger notification
         try {

@@ -1,7 +1,11 @@
 import { Response, NextFunction } from 'express';
 import notificationService from '../services/notification.service';
 import { successResponse, errorResponse } from '../utils/response';
-import { AuthRequest } from '../types';
+import { AuthRequest, UserRole } from '../types';
+import User from '../models/User';
+import Organization from '../models/Organization';
+import OrganizationMembership from '../models/OrganizationMembership';
+import { sendCustomAdminEmail, renderCustomAdminEmailHtml } from '../utils/email';
 
 /**
  * Notification Controller
@@ -107,6 +111,171 @@ export const markAllAsRead = async (req: AuthRequest, res: Response, next: NextF
         await notificationService.markAllAsRead(userId!);
 
         return successResponse(res, null, 'All notifications marked as read');
+    } catch (error) {
+        return next(error);
+    }
+};
+
+/**
+ * Preview rendered email HTML using the backend email template
+ * POST /api/v1/notifications/admin/preview
+ */
+export const previewAdminNotification = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+        const { title = '', message = '', recipientName = 'Tailor' } = req.body as {
+            title?: string;
+            message?: string;
+            recipientName?: string;
+        };
+
+        const html = renderCustomAdminEmailHtml(title, message, recipientName);
+        return successResponse(res, { html }, 'Preview rendered');
+    } catch (error) {
+        return next(error);
+    }
+};
+
+/**
+ * Send push notifications and/or emails from the monitoring console
+ * POST /api/v1/notifications/admin/send
+ */
+export const sendAdminNotification = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+        const {
+            audience = 'all_admins',
+            userId,
+            channels = ['push'],
+            title,
+            message,
+            type = 'SYSTEM_ANNOUNCEMENT',
+        } = req.body as {
+            audience: 'all_admins' | 'pro_admins' | 'free_admins' | 'single';
+            userId?: string;
+            channels: Array<'push' | 'email'>;
+            title: string;
+            message: string;
+            type?: string;
+        };
+
+        if (!title?.trim() || !message?.trim()) {
+            return errorResponse(res, 'Title and message are required', 400);
+        }
+
+        if (!Array.isArray(channels) || channels.length === 0) {
+            return errorResponse(res, 'Select at least one delivery channel (push or email)', 400);
+        }
+
+        let targetUsers: Array<{ _id: string; name?: string; email?: string }> = [];
+
+        if (audience === 'single') {
+            if (!userId) {
+                return errorResponse(res, 'userId is required when audience is single', 400);
+            }
+            const user = await User.findById(userId).select('_id name email').lean();
+            if (!user) {
+                return errorResponse(res, 'Target user not found', 404);
+            }
+            targetUsers = [user];
+        } else {
+            const memberships = await OrganizationMembership.find({ role: UserRole.ORG_ADMIN })
+                .select('userId organizationId')
+                .lean();
+
+            let filteredUserIds: string[];
+
+            if (audience === 'pro_admins' || audience === 'free_admins') {
+                const orgIds = Array.from(new Set(memberships.map((m) => m.organizationId).filter(Boolean)));
+                const orgs = await Organization.find({ _id: { $in: orgIds } })
+                    .select('_id subscriptionPlan subscriptionStatus subscriptionEndsAt')
+                    .lean();
+
+                const now = Date.now();
+                const proOrgIds = new Set(
+                    orgs
+                        .filter((o: any) => {
+                            if (o.subscriptionPlan !== 'premium') return false;
+                            if (o.subscriptionStatus === 'expired') return false;
+                            if (o.subscriptionEndsAt && new Date(o.subscriptionEndsAt).getTime() < now) {
+                                return false;
+                            }
+                            return true;
+                        })
+                        .map((o: any) => String(o._id))
+                );
+
+                filteredUserIds = Array.from(
+                    new Set(
+                        memberships
+                            .filter((m) => {
+                                const isPro = proOrgIds.has(String(m.organizationId));
+                                return audience === 'pro_admins' ? isPro : !isPro;
+                            })
+                            .map((m) => String(m.userId))
+                    )
+                );
+            } else {
+                filteredUserIds = Array.from(new Set(memberships.map((m) => String(m.userId))));
+            }
+
+            if (filteredUserIds.length > 0) {
+                targetUsers = await User.find({ _id: { $in: filteredUserIds } })
+                    .select('_id name email')
+                    .lean();
+            }
+        }
+
+        const sendPush = channels.includes('push');
+        const sendEmail = channels.includes('email');
+
+        let pushSent = 0;
+        let emailSent = 0;
+        let failed = 0;
+
+        const BATCH_SIZE = 10;
+        for (let i = 0; i < targetUsers.length; i += BATCH_SIZE) {
+            const batch = targetUsers.slice(i, i + BATCH_SIZE);
+            await Promise.all(
+                batch.map(async (target) => {
+                    if (sendPush) {
+                        try {
+                            await notificationService.sendToUser(String(target._id), {
+                                title: title.trim(),
+                                message: message.trim(),
+                                type,
+                            });
+                            pushSent += 1;
+                        } catch {
+                            failed += 1;
+                        }
+                    }
+
+                    if (sendEmail && target.email) {
+                        const ok = await sendCustomAdminEmail(
+                            target.email,
+                            title.trim(),
+                            message.trim(),
+                            target.name
+                        );
+                        if (ok) {
+                            emailSent += 1;
+                        } else {
+                            failed += 1;
+                        }
+                    }
+                })
+            );
+        }
+
+        return successResponse(
+            res,
+            {
+                targetCount: targetUsers.length,
+                pushSent,
+                emailSent,
+                failed,
+            },
+            `Dispatched to ${targetUsers.length} recipient(s)`
+        );
     } catch (error) {
         return next(error);
     }
