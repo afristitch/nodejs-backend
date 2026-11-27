@@ -149,25 +149,42 @@ export const getUsers = async (
         memberships = await OrganizationMembership.find({ userId: { $in: users.map(u => u._id) } }).lean();
     }
 
+    const orgIds = Array.from(
+        new Set(memberships.map((m) => m.organizationId).filter(Boolean))
+    );
+    const orgs = orgIds.length
+        ? await Organization.find({ _id: { $in: orgIds } })
+            .select('name subscriptionPlan subscriptionStatus subscriptionEndsAt')
+            .lean()
+        : [];
+    const orgMap = new Map(orgs.map((o: any) => [String(o._id), o]));
+
     // Map memberships onto users
     const mappedUsers = users.flatMap(u => {
         const userMemberships = memberships.filter(mem => mem.userId === u._id);
         
         if (userMemberships.length === 0) {
-            return [{ ...u, role: null, status: null, organizationId: null }];
+            return [{ ...u, role: null, status: null, organizationId: null, organization: null }];
         }
         
         // If an orgId filter is applied, only return the membership for that org
         if (orgId) {
             const m = userMemberships.find(mem => mem.organizationId === orgId);
-            return [{ ...u, role: m?.role, status: m?.status, organizationId: m?.organizationId }];
+            return [{
+                ...u,
+                role: m?.role,
+                status: m?.status,
+                organizationId: m?.organizationId,
+                organization: m?.organizationId ? orgMap.get(String(m.organizationId)) || null : null,
+            }];
         }
 
         return userMemberships.map(m => ({
             ...u,
             role: m.role,
             status: m.status,
-            organizationId: m.organizationId
+            organizationId: m.organizationId,
+            organization: m.organizationId ? orgMap.get(String(m.organizationId)) || null : null,
         }));
     });
 

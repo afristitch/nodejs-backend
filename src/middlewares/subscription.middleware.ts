@@ -94,9 +94,12 @@ export const requirePremium = async (req: AuthRequest, res: Response, next: Next
             });
         }
 
+        const hasValidEndDate = !organization.subscriptionEndsAt || organization.subscriptionEndsAt > now;
         const isPro =
-            organization.subscriptionStatus === SubscriptionStatus.ACTIVE &&
-            organization.subscriptionPlan === 'premium';
+            organization.subscriptionPlan === 'premium' &&
+            hasValidEndDate &&
+            (organization.subscriptionStatus === SubscriptionStatus.ACTIVE ||
+                organization.subscriptionStatus === SubscriptionStatus.CANCELLED);
 
         if (!isPro) {
             return res.status(403).json({

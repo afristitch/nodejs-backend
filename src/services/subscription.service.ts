@@ -127,11 +127,16 @@ export const getSubscriptionStatus = async (organizationId: string) => {
         }
     }
 
+    const hasValidEndDate = !organization.subscriptionEndsAt || organization.subscriptionEndsAt > new Date();
+    const isActiveOrCancelledWithTime =
+        organization.subscriptionStatus === SubscriptionStatus.ACTIVE ||
+        (organization.subscriptionStatus === SubscriptionStatus.CANCELLED && hasValidEndDate);
+
     return {
         plan: organization.subscriptionPlan,
         status: organization.subscriptionStatus,
         subscriptionEndsAt: organization.subscriptionEndsAt,
-        isPremium: organization.subscriptionStatus === SubscriptionStatus.ACTIVE && organization.subscriptionPlan === 'premium',
+        isPremium: organization.subscriptionPlan === 'premium' && isActiveOrCancelledWithTime,
         daysLeft
     };
 };

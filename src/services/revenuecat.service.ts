@@ -43,6 +43,9 @@ export interface RevenueCatEvent {
     cancel_reason?: string;
     expiration_reason?: string;
     new_product_id?: string;
+    transferred_to?: string[];
+    transferred_from?: string[];
+    aliases?: string[];
 }
 
 export interface RevenueCatWebhookBody {
@@ -62,8 +65,8 @@ export const handleWebhook = async (body: RevenueCatWebhookBody): Promise<void> 
         return;
     }
 
-    const appUserId = event.app_user_id;
-    const originalAppUserId = event.original_app_user_id;
+    const appUserId = event.app_user_id || event.transferred_to?.[0];
+    const originalAppUserId = event.original_app_user_id || event.transferred_to?.[0];
 
     // Resolve organizationId. RevenueCat sends app_user_id which we set as the local User ID.
     // Subscriptions however are linked to Organizations in our system.
@@ -74,8 +77,18 @@ export const handleWebhook = async (body: RevenueCatWebhookBody): Promise<void> 
     if (org) {
         organizationId = org._id;
     } else {
-        // 2. Try if the ID is a user ID
-        const user = await User.findById(appUserId) || await User.findById(originalAppUserId);
+        // 2. Try if the ID (or transferred_to target) is a user ID
+        const candidateIds = [
+            appUserId,
+            originalAppUserId,
+            ...(event.transferred_to || []),
+            ...(event.aliases || []),
+        ].filter(Boolean);
+        let user: any = null;
+        for (const cid of candidateIds) {
+            user = await User.findById(cid);
+            if (user) break;
+        }
         if (user) {
             const orgMembership = require('../models/OrganizationMembership').default;
             const membership = await orgMembership.findOne({ userId: user._id, status: 'active' });
@@ -115,6 +128,7 @@ export const handleWebhook = async (body: RevenueCatWebhookBody): Promise<void> 
         case 'UNCANCELLATION':
         case 'SUBSCRIPTION_EXTENDED':
         case 'NON_RENEWING_PURCHASE':
+        case 'TRANSFER':
             await handleActivation(organizationId, event);
             break;
 
@@ -195,6 +209,7 @@ const handleActivation = async (organizationId: string, event: RevenueCatEvent):
     }
 
     updateData.subscriptionStatus = status;
+    updateData.subscriptionPlan = 'premium';
     updateData.subscriptionEndsAt = expirationDate;
     updateData.subscriptionRemindersSent = {
         fiveDays: null,
@@ -209,7 +224,6 @@ const handleActivation = async (organizationId: string, event: RevenueCatEvent):
 
     if (plan) {
         updateData.planId = plan._id;
-        updateData.subscriptionPlan = plan.name;
     }
 
     await Organization.findByIdAndUpdate(organizationId, updateData);
@@ -257,10 +271,14 @@ const handleCancellation = async (organizationId: string, event: RevenueCatEvent
         return;
     }
 
-    // Mark cancelled but keep subscriptionEndsAt so access continues until period end
-    await Organization.findByIdAndUpdate(organizationId, {
+    // Mark cancelled (or expired if already past end date) while keeping subscriptionEndsAt so access continues until period end
+    const cancelUpdate: any = {
         subscriptionStatus: SubscriptionStatus.CANCELLED,
-    });
+    };
+    if (event.expiration_at_ms) {
+        cancelUpdate.subscriptionEndsAt = new Date(event.expiration_at_ms);
+    }
+    await Organization.findByIdAndUpdate(organizationId, cancelUpdate);
 
     // Trigger notification
     try {
