@@ -241,7 +241,16 @@ export interface IOrder {
     clientId: string; // UUID
     measurementsId?: string; // UUID
     orderNumber: string;
+    title?: string;
+    items?: {
+        name: string;
+        clientId?: string;
+        status?: OrderStatus;
+    }[];
     status: OrderStatus;
+    priority?: 'low' | 'medium' | 'high';
+    orderType?: 'single' | 'bulk';
+    assignedToId?: string;
     amount: number;
     amountPaid: number;
     balance: number; // Virtual field

@@ -65,6 +65,8 @@ export const getOrders = async (
 
         const orConditions: any[] = [
             { orderNumber: regex },
+            { title: regex },
+            { 'items.name': regex },
             { notes: regex },
             { styleNotes: regex },
             { clothSize: regex },

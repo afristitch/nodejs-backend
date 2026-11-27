@@ -26,6 +26,35 @@ const orderSchema = new Schema<IOrder>(
             required: true,
             // Removed global unique constraint to allow same ORD numbers in different organizations
         },
+        title: {
+            type: String,
+            trim: true,
+            default: null,
+        },
+        items: {
+            type: [
+                {
+                    name: { type: String, trim: true },
+                    clientId: { type: String, default: null },
+                    status: { type: String, enum: Object.values(OrderStatus), default: OrderStatus.PENDING },
+                },
+            ],
+            default: [],
+        },
+        priority: {
+            type: String,
+            enum: ['low', 'medium', 'high'],
+            default: 'medium',
+        },
+        orderType: {
+            type: String,
+            enum: ['single', 'bulk'],
+            default: 'single',
+        },
+        assignedToId: {
+            type: String,
+            default: null,
+        },
         status: {
             type: String,
             enum: Object.values(OrderStatus),
